@@ -1,0 +1,18 @@
+INFO [2026-01-29 14:29:18] $x
+INFO [2026-01-29 14:29:18] list(Bacterioplankton, Microbiome, Assemblage)
+INFO [2026-01-29 14:29:18] 
+INFO [2026-01-29 14:29:18] $category.names
+INFO [2026-01-29 14:29:18] c("Bacterioplankton", "Microbiome", "Assemblage")
+INFO [2026-01-29 14:29:18] 
+INFO [2026-01-29 14:29:18] $filename
+INFO [2026-01-29 14:29:18] NULL
+INFO [2026-01-29 14:29:18] 
+INFO [2026-01-29 14:29:18] $main
+INFO [2026-01-29 14:29:18] [1] "PopA RA5"
+INFO [2026-01-29 14:29:18] 
+INFO [2026-01-29 14:29:18] $main.cex
+INFO [2026-01-29 14:29:18] [1] 2
+INFO [2026-01-29 14:29:18] 
+INFO [2026-01-29 14:29:18] $main.fontface
+INFO [2026-01-29 14:29:18] [1] "bold"
+INFO [2026-01-29 14:29:18] 

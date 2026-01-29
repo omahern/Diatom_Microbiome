@@ -17,7 +17,8 @@ knit: (function(input_file, encoding) {
  output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 ---
 # workplace setup
-```{r setup, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 library(Hmisc)
 library(vegan)
 library(ggplot2)
@@ -35,29 +36,69 @@ library(rstatix)
 # Physiology
 ## Growth Rates
 ### Bacteria 
-```{r bact-1, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 read<-read.csv(file="datafiles/Bact_Growth_rates.csv",
                header=T,row.names=1)
 
 boxplot(read$Growth~read$Geno)
+```
+
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/bact-1-1.png)<!-- -->
+
+```r
 a=aov(read$Growth~read$Geno)
 summary(a)
-tuk=TukeyHSD(a)
-plot(tuk,las=2)
-
-boxplot(read$Growth~read$Pop)
-a=aov(read$Growth~read$Pop)
-summary(a)
-tuk=TukeyHSD(a)
-plot(tuk,las=2)
-
+```
 
 ```
+##             Df Sum Sq Mean Sq F value Pr(>F)  
+## read$Geno    6 0.4072 0.06787   3.938 0.0277 *
+## Residuals   10 0.1723 0.01723                 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 4 observations deleted due to missingness
+```
+
+```r
+tuk=TukeyHSD(a)
+plot(tuk,las=2)
+```
+
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/bact-1-2.png)<!-- -->
+
+```r
+boxplot(read$Growth~read$Pop)
+```
+
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/bact-1-3.png)<!-- -->
+
+```r
+a=aov(read$Growth~read$Pop)
+summary(a)
+```
+
+```
+##             Df Sum Sq Mean Sq F value Pr(>F)  
+## read$Pop     2 0.1994 0.09969   3.671 0.0523 .
+## Residuals   14 0.3802 0.02716                 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 4 observations deleted due to missingness
+```
+
+```r
+tuk=TukeyHSD(a)
+plot(tuk,las=2)
+```
+
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/bact-1-4.png)<!-- -->
 
 ### Diatoms 
 
 #### edited and used as of 8 jan
-```{r fcm-growth-1, dpi=300, width=5,height=6,message=FALSE, error=FALSE, warning=FALSE, eval=FALSE}
+
+```r
 read<-read.csv(file="datafiles/TR_Growth_rates_December25.csv",
                header=T,row.names=1)
 
@@ -103,13 +144,12 @@ test=compare_means(growth_rate~clonal, data=subset, 'anova',paired=TRUE,p.adjust
 test
 
 ggplot1+stat_pvalue_manual(data=test,label='p.adj' )
-
-
 ```
 
 ### used 10 january
 
-```{r fcm-growth-2, dpi=300, width=5,height=6,message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 read<-read.csv(file="datafiles/TR_Growth_rates_December25.csv",
                header=T,row.names=1)
 
@@ -147,18 +187,36 @@ ggplot1=ggplot(subset, aes(x=isolate, y=growth_rate,
   #stat_compare_means(growth_rate~treatment, group.by='group',data=subset, 'anova')+
   scale_x_discrete(name='') +coord_flip()
 ggplot1
-
-
 ```
 
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/fcm-growth-2-1.png)<!-- -->
+
 #### with fv.fm
-```{r fcm-growth-a, dpi=300, width=5,height=6,message=FALSE, error=FALSE, warning=FALSE}
 
-
+```r
 read=read.csv(file='/Users/oliviaahern/Documents/GitHub/MS2/ms2_fvfm.csv',header=T,row.names=1)
 dim(read)
-head(read)
+```
 
+```
+## [1] 48  5
+```
+
+```r
+head(read)
+```
+
+```
+##                X.1     fv strain  bact population
+## RA4-A RA4-A_T5.000 0.5173    RA4 xenic       PopA
+## RA4-B RA4-B_T5.000 0.5206    RA4 xenic       PopA
+## RA4-C RA4-C_T5.000 0.5189    RA4 xenic       PopA
+## RA5-A RA5-A_T5.000 0.5550    RA5 xenic       PopA
+## RA5-B RA5-B_T5.000 0.5523    RA5 xenic       PopA
+## RA5-C RA5-C_T5.000 0.5631    RA5 xenic       PopA
+```
+
+```r
 read2=subset(read, strain!="NB4" & strain !="NB6" & strain !="RA4" & strain !="YC5")
 
 gplot2=ggplot(read2, 
@@ -177,62 +235,157 @@ gplot2=ggplot(read2,
   #stat_compare_means(growth_rate~treatment, group.by='group',data=subset, 'anova')+
   scale_x_discrete(name='')+ coord_flip()
  none
+```
+
+```
+## function (.x, .p, ...) 
+## {
+##     every(.x, negate(.p), ...)
+## }
+## <bytecode: 0x11e626038>
+## <environment: namespace:purrr>
+```
+
+```r
 cowplot::plot_grid(ggplot1, gplot2, 
                    rel_heights = c(1.7,1),
                    nrow=2,
                    align='h',
                    axis='l',
                    byrow=TRUE, labels='auto')
-       #           rel_widths = c(1.7,1))
+```
 
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/fcm-growth-a-1.png)<!-- -->
+
+```r
+       #           rel_widths = c(1.7,1))
 ```
 
 ##### stats of fv/fm
-```{r fcm-growth-b, dpi=300, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 a=aov(read$fv ~read$strain*read$bact)
 tuk=TukeyHSD(a)
 par(mar=c(5,10,1,1))
 plot(tuk,las=2)
+```
 
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/fcm-growth-b-1.png)<!-- -->![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/fcm-growth-b-2.png)<!-- -->![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/fcm-growth-b-3.png)<!-- -->
 
-
+```r
 data=data.frame(read2)
 data %>%
   group_by(strain, bact) %>%
   get_summary_stats(fv, type = "mean_sd")
+```
 
+```
+## # A tibble: 8 × 6
+##   strain bact   variable     n  mean    sd
+##   <chr>  <chr>  <fct>    <dbl> <dbl> <dbl>
+## 1 NB7    axenic fv           3 0.48  0.014
+## 2 NB7    xenic  fv           3 0.502 0.008
+## 3 RA5    axenic fv           3 0.545 0.003
+## 4 RA5    xenic  fv           3 0.557 0.006
+## 5 RD4    axenic fv           3 0.472 0.023
+## 6 RD4    xenic  fv           3 0.425 0.009
+## 7 YE5    axenic fv           3 0.475 0.006
+## 8 YE5    xenic  fv           3 0.427 0.006
+```
+
+```r
 data %>%
   group_by(strain, bact) %>%
   shapiro_test(fv)
+```
 
+```
+## # A tibble: 8 × 5
+##   strain bact   variable statistic     p
+##   <chr>  <chr>  <chr>        <dbl> <dbl>
+## 1 NB7    axenic fv           0.968 0.658
+## 2 NB7    xenic  fv           0.979 0.725
+## 3 RA5    axenic fv           0.967 0.650
+## 4 RA5    xenic  fv           0.923 0.463
+## 5 RD4    axenic fv           0.868 0.289
+## 6 RD4    xenic  fv           0.996 0.887
+## 7 YE5    axenic fv           0.941 0.530
+## 8 YE5    xenic  fv           0.946 0.553
+```
+
+```r
 model <- lm(fv ~ strain * bact, data = data)
 
 data %>%
   group_by(strain) %>%
   anova_test(fv ~ bact, error = model)
+```
 
+```
+## # A tibble: 4 × 8
+##   strain Effect   DFn   DFd     F         p `p<.05`   ges
+## * <chr>  <chr>  <dbl> <dbl> <dbl>     <dbl> <chr>   <dbl>
+## 1 NB7    bact       1    16  5.65 0.03      "*"     0.261
+## 2 RA5    bact       1    16  1.67 0.215     ""      0.094
+## 3 RD4    bact       1    16 25.9  0.000109  "*"     0.618
+## 4 YE5    bact       1    16 28.0  0.0000733 "*"     0.636
+```
 
+```r
 mono=subset(subset2, clonal=='monoclonal' & temp =="18")
 ```
 
-```{r stats-a}
+
+```r
 a=aov(mono$growth~mono$population)
 summary(a)
+```
+
+```
+##                 Df Sum Sq Mean Sq F value   Pr(>F)    
+## mono$population  2 0.8967  0.4483   45.91 2.15e-08 ***
+## Residuals       21 0.2051  0.0098                     
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+```
+
+```r
 tuk=TukeyHSD(a)
 plot(tuk,las=2)
+```
+
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/stats-a-1.png)<!-- -->
+
+```r
 range(mono$growth_rate
       )
 ```
 
-```{r stats-b}
-a=aov(subset$growth~subset$clonal)
-summary(a)
-tuk=TukeyHSD(a)
-plot(tuk,las=2)
-
+```
+## [1] 0.7336728 1.4978085
 ```
 
-```{r stats-c, eval=FALSE}
+
+```r
+a=aov(subset$growth~subset$clonal)
+summary(a)
+```
+
+```
+##               Df Sum Sq Mean Sq F value Pr(>F)
+## subset$clonal  1  0.127 0.12684   1.696    0.2
+## Residuals     43  3.216 0.07478
+```
+
+```r
+tuk=TukeyHSD(a)
+plot(tuk,las=2)
+```
+
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/stats-b-1.png)<!-- -->
+
+
+```r
 a=aov(subset$growth~subset$isolate*subset$culture)
 summary(a)
 tuk=TukeyHSD(a)
@@ -243,31 +396,25 @@ model <- lm(growth_rate ~ isolate * bact, data = subset2)
 data %>%
   group_by(strain) %>%
   anova_test(fv ~ bact, error = model)
-
-
 ```
 
-```{r stats-d, message=FALSE, error=FALSE, warning=FALSE, eval=FALSE}
 
+```r
 par(mfrow=c(1,2))
 boxplot(read$Growth~read$Geno)
 a=aov(read$Growth~read$Geno)
 summary(a)
 tuk=TukeyHSD(a)
 plot(tuk,las=2)
-
-
 ```
 
-```{r stats-e, message=FALSE, error=FALSE, warning=FALSE, eval=FALSE}
 
+```r
 boxplot(read$Growth~read$Pop)
 a=aov(read$Growth~read$Pop)
 summary(a)
 tuk=TukeyHSD(a)
 plot(tuk,las=2)
-
-
 ```
 
 
@@ -277,11 +424,31 @@ plot(tuk,las=2)
 
 
 ## fv/fm
-```{r fv-1, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 read=read.csv(file='datafiles/ms2_fvfm.csv',header=T,row.names=1)
 dim(read)
-head(read)
+```
 
+```
+## [1] 48  5
+```
+
+```r
+head(read)
+```
+
+```
+##                X.1     fv strain  bact population
+## RA4-A RA4-A_T5.000 0.5173    RA4 xenic       PopA
+## RA4-B RA4-B_T5.000 0.5206    RA4 xenic       PopA
+## RA4-C RA4-C_T5.000 0.5189    RA4 xenic       PopA
+## RA5-A RA5-A_T5.000 0.5550    RA5 xenic       PopA
+## RA5-B RA5-B_T5.000 0.5523    RA5 xenic       PopA
+## RA5-C RA5-C_T5.000 0.5631    RA5 xenic       PopA
+```
+
+```r
 ggplot(read, 
              aes(x=strain, y=fv,
                  color=factor(population), fill=factor(bact)))+
@@ -295,30 +462,97 @@ ggplot(read,
   guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
   #stat_compare_means(growth_rate~treatment, group.by='group',data=subset, 'anova')+
   scale_x_discrete(name='')  + coord_flip()
-
 ```
 
-```{r fv-2, message=FALSE, error=FALSE, warning=FALSE}
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/fv-1-1.png)<!-- -->
+
+
+```r
 a=aov(read$fv ~read$strain*read$bact)
 tuk=TukeyHSD(a)
 par(mar=c(5,10,1,1))
 plot(tuk,las=2)
+```
 
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/fv-2-1.png)<!-- -->![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/fv-2-2.png)<!-- -->![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/fv-2-3.png)<!-- -->
+
+```r
 data=data.frame(read)
 data %>%
   group_by(strain, bact) %>%
   get_summary_stats(fv, type = "mean_sd")
+```
 
+```
+## # A tibble: 16 × 6
+##    strain bact   variable     n  mean    sd
+##    <chr>  <chr>  <fct>    <dbl> <dbl> <dbl>
+##  1 NB4    axenic fv           3 0.525 0.018
+##  2 NB4    xenic  fv           3 0.498 0.015
+##  3 NB6    axenic fv           3 0.535 0.007
+##  4 NB6    xenic  fv           3 0.51  0.006
+##  5 NB7    axenic fv           3 0.48  0.014
+##  6 NB7    xenic  fv           3 0.502 0.008
+##  7 RA4    axenic fv           3 0.53  0.006
+##  8 RA4    xenic  fv           3 0.519 0.002
+##  9 RA5    axenic fv           3 0.545 0.003
+## 10 RA5    xenic  fv           3 0.557 0.006
+## 11 RD4    axenic fv           3 0.472 0.023
+## 12 RD4    xenic  fv           3 0.425 0.009
+## 13 YC5    axenic fv           3 0.563 0.008
+## 14 YC5    xenic  fv           3 0.562 0.015
+## 15 YE5    axenic fv           3 0.475 0.006
+## 16 YE5    xenic  fv           3 0.427 0.006
+```
+
+```r
 data %>%
   group_by(strain, bact) %>%
   shapiro_test(fv)
+```
 
+```
+## # A tibble: 16 × 5
+##    strain bact   variable statistic      p
+##    <chr>  <chr>  <chr>        <dbl>  <dbl>
+##  1 NB4    axenic fv           0.954 0.586 
+##  2 NB4    xenic  fv           0.989 0.795 
+##  3 NB6    axenic fv           0.884 0.337 
+##  4 NB6    xenic  fv           0.979 0.720 
+##  5 NB7    axenic fv           0.968 0.658 
+##  6 NB7    xenic  fv           0.979 0.725 
+##  7 RA4    axenic fv           0.822 0.168 
+##  8 RA4    xenic  fv           1.00  0.967 
+##  9 RA5    axenic fv           0.967 0.650 
+## 10 RA5    xenic  fv           0.923 0.463 
+## 11 RD4    axenic fv           0.868 0.289 
+## 12 RD4    xenic  fv           0.996 0.887 
+## 13 YC5    axenic fv           0.981 0.735 
+## 14 YC5    xenic  fv           0.761 0.0255
+## 15 YE5    axenic fv           0.941 0.530 
+## 16 YE5    xenic  fv           0.946 0.553
+```
+
+```r
 model <- lm(fv ~ strain * bact, data = data)
 
 data %>%
   group_by(strain) %>%
   anova_test(fv ~ bact, error = model)
+```
 
+```
+## # A tibble: 8 × 8
+##   strain Effect   DFn   DFd      F          p `p<.05`      ges
+## * <chr>  <chr>  <dbl> <dbl>  <dbl>      <dbl> <chr>      <dbl>
+## 1 NB4    bact       1    32  9.58  0.004      "*"     0.23    
+## 2 NB6    bact       1    32  7.46  0.01       "*"     0.189   
+## 3 NB7    bact       1    32  5.80  0.022      "*"     0.154   
+## 4 RA4    bact       1    32  1.39  0.247      ""      0.042   
+## 5 RA5    bact       1    32  1.71  0.2        ""      0.051   
+## 6 RD4    bact       1    32 26.6   0.0000125  "*"     0.454   
+## 7 YC5    bact       1    32  0.016 0.901      ""      0.000496
+## 8 YE5    bact       1    32 28.7   0.00000698 "*"     0.473
 ```
 
 
@@ -328,12 +562,27 @@ data %>%
 ## Growth Curves
 
 ### Diatoms
-```{r curves-1, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 read=read.csv(file='datafiles/rotula_cellcounts.csv',header=T,row.names=1)
 dim(read)
+```
+
+```
+## [1] 69  7
+```
+
+```r
 treatment=as.factor(read$treatment[1:48])
 
 dim(read)
+```
+
+```
+## [1] 69  7
+```
+
+```r
 growth_data=data.frame(read[1:48,3:7])
 
 # get mean and standard deviation
@@ -352,12 +601,11 @@ mean_db=aggregate(doubles_data,by=list(treat_doub),FUN=mean,na.rm=T)
 mean_db=t(mean_db[,2:6])
 sd_db=aggregate(doubles_data,by=list(treat_doub),FUN=sd,na.rm=T)
 sd_db=t(sd_db[,2:6])
-
-
 ```
 
 #### Plot all black and white
-```{r curves-2, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 {par(mfrow=c(3,5),mar=c(5,4,1,1))
   # NB4
   errbar(time,mean[,1],yplus=mean[,1]+sd[,1],yminus=mean[,1]-sd[,1],
@@ -533,17 +781,32 @@ sd_db=t(sd_db[,2:6])
   segments(4,100,4,60000,col='gray90',lty=2)
   segments(5,100,5,60000,col='gray90',lty=2)
 }
-
 ```
 
-#### Plot all colored
-```{r curves-3, message=FALSE, error=FALSE, warning=FALSE}
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/curves-2-1.png)<!-- -->
 
+#### Plot all colored
+
+```r
 read=read.csv(file='datafiles/rotula_cellcounts.csv',header=T,row.names=1)
 dim(read)
+```
+
+```
+## [1] 69  7
+```
+
+```r
 treatment=as.factor(read$treatment[1:48])
 
 dim(read)
+```
+
+```
+## [1] 69  7
+```
+
+```r
 growth_data=data.frame(read[1:48,3:7])
 
 # get mean and standard deviation
@@ -703,17 +966,32 @@ time=c(0,2,3,4,5)
       axis(1, at=c(0:5),label=FALSE)
 
 }
-
 ```
 
-#### Plot all colored 2
-```{r curves-4, message=FALSE, error=FALSE, warning=FALSE}
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/curves-3-1.png)<!-- -->
 
+#### Plot all colored 2
+
+```r
 read=read.csv(file='datafiles/rotula_cellcounts.csv',header=T,row.names=1)
 dim(read)
+```
+
+```
+## [1] 69  7
+```
+
+```r
 treatment=as.factor(read$treatment[1:48])
 
 dim(read)
+```
+
+```
+## [1] 69  7
+```
+
+```r
 growth_data=data.frame(read[1:48,3:7])
 
 # get mean and standard deviation
@@ -874,12 +1152,13 @@ time=c(0,2,3,4,5)
       axis(1, at=c(0:5),label=FALSE)
 
 }
-
 ```
 
-#### Plot Subset of Strains (used)
-```{r curves-5, message=FALSE, error=FALSE, warning=FALSE}
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/curves-4-1.png)<!-- -->
 
+#### Plot Subset of Strains (used)
+
+```r
 read=read.csv(file='datafiles/rotula_cellcounts.csv',header=T,row.names=1)
 # dim(read)
 treatment=as.factor(read$treatment[1:48])
@@ -992,8 +1271,9 @@ time=c(0,2,3,4,5)
       axis(1, at=c(0:5),label=FALSE)
 
 }
-
 ```
+
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/curves-5-1.png)<!-- -->
 
 ### bacteria (need to edit)
  
@@ -1514,38 +1794,29 @@ barplot(as.matrix(abund[13:15,]),las=2,space=0,border=NA,col=colors[10:12],
 ```
 
 # 16S data
-```{r,echo=F,message=F}
-## Chapter 3 97% OTUs
-## vst transformation 
-library(DESeq2)
-library(phyloseq)
-library(ape)
-library(vegan)
-library(GenomicRanges)
-library(CoDaSeq)
-library(zCompositions)
-library(compositions)
 
-x<-read.csv(file='datafiles/OTU_Tab_over5.csv',header=TRUE,row.names=1)
-dim(x)
-gloor_tab=x
-OTU = otu_table(x, taxa_are_rows=T)
-taxa<-read.csv(file="/Users/oliviaahern/Documents/PhD/Chapter2/CHP_3/Full_Paper/21Apr20/OTU_Taxa.csv",header=TRUE,row.names=1)
-t<-as.matrix(taxa)
-tax2<-tax_table(t)
-tree=read.tree('datafiles/otus_tree_21apr20.tre')
-map<-import_qiime_sample_data("datafiles/cg_map_10jan25.txt")
+```
+## Warning: package 'DESeq2' was built under R version 4.3.3
+```
 
-cg = phyloseq(OTU, map,tax2,tree)
-cg_filt=subset_samples(cg, keep_2026 =='yes')
+```
+## Warning: package 'GenomeInfoDb' was built under R version 4.3.3
+```
 
-cg
-phyo1 = subset_taxa(cg, !phyla=="Cyanobacteria/Chloroplast")
-cg=phyo1
-is.rooted(phy_tree(cg))
+```
+## [1] 1581   94
+```
 
-cg_filt=subset_samples(cg, keep_2026 =='yes')
+```
+## phyloseq-class experiment-level object
+## otu_table()   OTU Table:         [ 1581 taxa and 94 samples ]
+## sample_data() Sample Data:       [ 94 samples by 29 sample variables ]
+## tax_table()   Taxonomy Table:    [ 1581 taxa by 7 taxonomic ranks ]
+## phy_tree()    Phylogenetic Tree: [ 1581 tips and 1580 internal nodes ]
+```
 
+```
+## [1] TRUE
 ```
 
 ## venn diagrams
@@ -1915,31 +2186,83 @@ length(cam$`Micro-Assemb`)
 
 
 # General Alpha statistics 
-```{r}
+
+```r
 cg_filt=subset_samples(cg, keep_2026 =='yes')
 s=specnumber(t(otu_table(cg_filt)))
 
 # spec number for 
 filter=subset_samples(cg_filt,clonal2=='monoclonal' & definition =='assemblage')
 filter
+```
+
+```
+## phyloseq-class experiment-level object
+## otu_table()   OTU Table:         [ 1574 taxa and 12 samples ]
+## sample_data() Sample Data:       [ 12 samples by 29 sample variables ]
+## tax_table()   Taxonomy Table:    [ 1574 taxa by 7 taxonomic ranks ]
+## phy_tree()    Phylogenetic Tree: [ 1574 tips and 1573 internal nodes ]
+```
+
+```r
 s2=specnumber(t(otu_table(filter)))
 mean(s2)
-sd(s2)
+```
 
+```
+## [1] 277.3333
+```
+
+```r
+sd(s2)
+```
+
+```
+## [1] 45.88787
+```
+
+```r
 filter=subset_samples(cg_filt,clonal2=='multiclonal' & definition =='assemblage')
 s=specnumber(t(otu_table(filter)))
 mean(s)
+```
+
+```
+## [1] 309.5556
+```
+
+```r
 sd(s)
+```
 
+```
+## [1] 30.02962
+```
+
+```r
 t.test(s, s2)
+```
 
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  s and s2
+## t = 1.9407, df = 18.745, p-value = 0.06749
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -2.56108 67.00552
+## sample estimates:
+## mean of x mean of y 
+##  309.5556  277.3333
 ```
 
 # Beta diversity and ordinations
 
 ## variance stabilizing transformation 
 
-```{r vst-1, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 library(CoDaSeq)
 library(DESeq2)
 cg_filt <- filter_taxa(cg_filt, function(x) sum(x) > 1, prune = TRUE)
@@ -1966,7 +2289,8 @@ comp_clr=comp_vst
 ## all
 
 ### pca
-```{r vst-2, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 library(CoDaSeq)
 library(DESeq2)
 cg_filt2=subset_samples(cg_filt)
@@ -2002,11 +2326,13 @@ ordiellipse(p$x,
            label=TRUE)
 
 }
-
 ```
 
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/vst-2-1.png)<!-- -->
+
 ### pcoa
-```{r vst-2-pcoa, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 otu2=otu_table(comp_clr)
 euc=phyloseq::distance(t(otu2),'euclidean')
 p=prcomp(euc,scale=T,center=T)
@@ -2038,15 +2364,32 @@ legend(-2, -5,
        pch=c(22,23,22,23,21,22,23))
 
 }
+```
 
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/vst-2-pcoa-1.png)<!-- -->
 
+```r
 anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3))
+```
+
+```
+## 
+## Call:
+## anosim(x = euc, grouping = as.factor(sample_data(comp_clr)$Pop3)) 
+## Dissimilarity: euclidean 
+## 
+## ANOSIM statistic R: 0.1382 
+##       Significance: 0.01 
+## 
+## Permutation: free
+## Number of permutations: 999
 ```
 
 ## microbiomes only 
 
 ### pca
-```{r vst-3, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 library(CoDaSeq)
 library(DESeq2)
 cg_filt2=subset_samples(cg_filt, extract=="WGA" & definition =="microbiome")
@@ -2083,13 +2426,14 @@ ordiellipse(p$x,
            label=TRUE)
 
 }
-
-
 ```
+
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/vst-3-1.png)<!-- -->
 
 ### pcoa
 
-```{r vst-4, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 otu2=otu_table(comp_clr)
 euc=phyloseq::distance(t(otu2),'euclidean')
 p=prcomp(euc,scale=T,center=T)
@@ -2125,23 +2469,42 @@ legend(-2, -5,
        pch=c(22,23,22,23,21,22,23))
 
 }
+```
 
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/vst-4-1.png)<!-- -->
+
+```r
 anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3))
+```
 
+```
+## 
+## Call:
+## anosim(x = euc, grouping = as.factor(sample_data(comp_clr)$Pop3)) 
+## Dissimilarity: euclidean 
+## 
+## ANOSIM statistic R: 0.2457 
+##       Significance: 0.002 
+## 
+## Permutation: free
+## Number of permutations: 999
+```
+
+```r
 # cg_filta=subset_samples(comp_clr, clonal=='monoclonal')
 # otu2=otu_table(cg_filta)
 # euc=phyloseq::distance(t(otu2),'euclidean')
 # anosim(euc, grouping=as.factor(sample_data(cg_filta)$Pop3))
 # anosim(euc, grouping=as.factor(sample_data(cg_filta)$Pop3))
 # adonis2(euc~as.factor(sample_data(cg_filta)$Pop3))
-
 ```
 
 
 ## assemblages 
 
 ### pca
-```{r vst-5, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 library(CoDaSeq)
 library(DESeq2)
 cg_filt2=subset_samples(cg_filt, definition =='assemblage')
@@ -2180,12 +2543,13 @@ ordiellipse(p$x,
            label=TRUE)
 
 }
-
-
 ```
 
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/vst-5-1.png)<!-- -->
+
 ### pcoa
-```{r vst-6, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 otu2=otu_table(comp_clr)
 euc=phyloseq::distance(t(otu2),'euclidean')
 p=prcomp(euc,scale=T,center=T)
@@ -2218,12 +2582,13 @@ legend(-2, -5,
        pch=c(22,23,22,23,21,22,23))
 
 }
-
-
 ```
 
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/vst-6-1.png)<!-- -->
+
 ## assemblages with control 
-```{r vst-7, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 library(CoDaSeq)
 library(DESeq2)
 cg_filt2=subset_samples(cg_filt, definition =='assemblage' | definition == "inoculum_T5")
@@ -2282,23 +2647,29 @@ legend(-2, -5,
        pch=c(22,23,22,23,21,22,23))
 
 }
-
-
-
 ```
+
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/vst-7-1.png)<!-- -->
 
 # philr 
 
 ### all
 
-```{r philr-1, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 library(philr)
 sub=subset_samples(cg_filt, extract=="WGA" & definition =="microbiome")
 
 GP <- transform_sample_counts(sub, function(x) x+1)
 phy_tree(GP) <- makeNodeLabel(phy_tree(GP), method="number", prefix='n')
 name.balance(phy_tree(GP), tax_table(GP), 'n1')
+```
 
+```
+## [1] "strain_Otu2116/Kingdom_Bacteria"
+```
+
+```r
 otu.table <- t(otu_table(GP))
 tree <- phy_tree(GP)
 metadata <- sample_data(GP)
@@ -2337,18 +2708,26 @@ legend(-20,-40,
        pch=c(22,23,22,23,21,22,23))
 
 }
-
 ```
 
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/philr-1-1.png)<!-- -->
+
 ### microbiomes monoclonal
-```{r philr-2, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 library(philr)
 sub=subset_samples(cg_filt, extract=="WGA" & definition =="microbiome" & clonal =='monoclonal')
 
 GP <- transform_sample_counts(sub, function(x) x+1)
 phy_tree(GP) <- makeNodeLabel(phy_tree(GP), method="number", prefix='n')
 name.balance(phy_tree(GP), tax_table(GP), 'n1')
+```
 
+```
+## [1] "strain_Otu2116/Kingdom_Bacteria"
+```
+
+```r
 otu.table <- t(otu_table(GP))
 tree <- phy_tree(GP)
 metadata <- sample_data(GP)
@@ -2387,18 +2766,26 @@ legend(-20,-40,
        pch=c(22,23,22,23,21,22,23))
 
 }
-
 ```
+
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/philr-2-1.png)<!-- -->
 
 
 ### assemblage control 
-```{r philr-3, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 library(philr)
 sub=subset_samples(cg_filt, definition =='assemblage' | definition == "inoculum_T5")
 GP <- transform_sample_counts(sub, function(x) x+1)
 phy_tree(GP) <- makeNodeLabel(phy_tree(GP), method="number", prefix='n')
 name.balance(phy_tree(GP), tax_table(GP), 'n1')
+```
 
+```
+## [1] "strain_Otu2116/Kingdom_Bacteria"
+```
+
+```r
 otu.table <- t(otu_table(GP))
 tree <- phy_tree(GP)
 metadata <- sample_data(GP)
@@ -2419,17 +2806,25 @@ ordiellipse(gp.pcoa$vectors,
            group=as.factor(sample_data(sub)$Treatment),label=T,
            col=c('gray70','gray50','forestgreen','green','navy','blue'),
            kind ='sd',conf=0.8)}
-
 ```
 
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/philr-3-1.png)<!-- -->
+
 ### assemblage only 
-```{r philr-4, message=FALSE, error=FALSE, warning=FALSE}
+
+```r
 library(philr)
 sub=subset_samples(cg_filt, definition =='assemblage')
 GP <- transform_sample_counts(sub, function(x) x+1)
 phy_tree(GP) <- makeNodeLabel(phy_tree(GP), method="number", prefix='n')
 name.balance(phy_tree(GP), tax_table(GP), 'n1')
+```
 
+```
+## [1] "strain_Otu2116/Kingdom_Bacteria"
+```
+
+```r
 otu.table <- t(otu_table(GP))
 tree <- phy_tree(GP)
 metadata <- sample_data(GP)
@@ -2469,3 +2864,5 @@ legend(-20,-40,
 
 }
 ```
+
+![](/Users/oliviaahern/Documents/GitHub/Diatom_Microbiome/docs/index_files/figure-html/philr-4-1.png)<!-- -->
