@@ -1,0 +1,4095 @@
+---
+title: "CoGrowth"
+output: 
+  html_document:
+    keep_md: true
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    code_folding: hide
+    number_sections: false
+    theme: lumen
+
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+---
+```{r setup}
+library(vegan)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(phyloseq)
+library(ape)
+```
+
+# map
+```{r map}
+mi_counties <- map_data("county", "rhode island") %>% 
+  select(lon = long, lat, group, id = subregion)
+head(mi_counties)
+
+library(ozmaps)
+library(sf)
+
+)
+ggplot(mi_counties, aes(lon, lat)) + 
+  geom_point(size = .25, show.legend = FALSE) +
+  coord_quickmap()
+
+ggplot(mi_counties, aes(lon, lat, group = group)) +
+  geom_polygon(fill = "white", colour = "grey50") + 
+  coord_quickmap()
+
+
+
+
+library(ozmaps)
+library(sf)```
+# Physiology
+## Growth Rates
+### Bacteria 
+```{r bact-growth}
+read<-read.csv(file="/Users/oliviaahern/Documents/R/PhD/Chp2/12June23/Bact_Growth_rates.csv",
+               header=T,row.names=1)
+
+boxplot(read$Growth~read$Geno)
+a=aov(read$Growth~read$Geno)
+summary(a)
+tuk=TukeyHSD(a)
+plot(tuk,las=2)
+
+boxplot(read$Growth~read$Pop)
+a=aov(read$Growth~read$Pop)
+summary(a)
+tuk=TukeyHSD(a)
+plot(tuk,las=2)
+
+
+```
+## 22 vs 18C
+
+```{r fcm-growth, dpi=300, width=5,height=6}
+read=read.csv(file="/Users/oliviaahern/Desktop/growth_subset.csv",header=T,row.names=1)
+
+a=aov(read$growth~read$Bact)
+summary(a)
+TukeyHSD(a)
+
+boxplot(read$growth~read$Temp)
+a=aov(read$growth~as.factor(read$Temp))
+summary(a)
+TukeyHSD(a)
+
+boxplot(read$growth~read$ID,las=2)
+a=aov(read$growth~as.factor(read$Isolate))
+summary(a)
+TukeyHSD(a)
+
+```
+
+## Diatoms 
+
+### bad
+
+```{r fcm-growth, dpi=300, width=5,height=6}
+read<-read.csv(file="/Users/oliviaahern/Documents/PhD/Chapter2/CHP_3/Full_Paper/20Apr20/TR_Growth_rates_December25.csv",
+               header=T,row.names=1)
+
+subset=subset(read, treatment!="RD4_YE5" & treatment!="RA5_RD4" & treatment!="RD4_NB7")
+
+growth_order=c("RA4_AX","RA4","RA5_AX","RA5","RD4_AX","RD4","RD4_AX-22",'RD4_22',
+               'YC5_AX','YC5',"YE5_AX","YE5","NB4_AX","NB4","NB6_AX","NB6","NB7_AX",
+               "NB7","NB7_AX-22","NB7_22")
+
+ subset$names2=paste(subset$isolate, subset$temp)
+
+ggplot1=ggplot(subset, aes(x=isolate, y=growth_rate, 
+                   fill=culture, 
+                   color=population)) +
+  geom_boxplot(alpha=.4) +
+  theme_classic() + 
+  scale_fill_manual(values=c('gray','white'))+
+  scale_color_manual(values=c("navy","firebrick","forestgreen")) +
+# scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',"gray70",'navy','gray70','firebrick','gray70','firebrick','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen')) +
+ # scale_color_manual(values=c('black','navy','black','navy','black','navy','black','navy','black','firebrick','black','firebrick','black','forestgreen','black','forestgreen','black','forestgreen','black','forestgreen' )) + 
+  theme(plot.margin=unit(c(0,0,0,0.25),"cm"))+
+   facet_grid(temp~.,scales='free',space='free') +
+  theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+ # scale_y_continuous(name='Growth Rate')+
+  ylab(expression("Growth rate " * mu *  ~day^-1)) +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  #stat_compare_means(growth_rate~treatment, group.by='group',data=subset, 'anova')+
+  scale_x_discrete(name='') + coord_flip()
+ggplot1
+
+
+compare_means(growth_rate~treatment, group.by='isolate2',data=subset, 'anova',paired=TRUE,p.adjust.method = 'none')
+test=compare_means(growth_rate~treatment, group.by='isolate2',data=subset, 'anova',paired=TRUE,p.adjust.method = 'none')
+test=compare_means(growth_rate~isolate, group.by='names',data=subset, 'anova',paired=TRUE,p.adjust.method = 'none')
+
+
+ggplot1+stat_pvalue_manual(data=test,label='p.adj' )
+
+compare_means(growth_rate~treatment, group.by='population',data=subset, 'anova')
+
+```
+
+
+### edited and used as of 8 jan
+```{r fcm-growth, dpi=300, width=5,height=6}
+read<-read.csv(file="/Users/oliviaahern/Documents/PhD/Chapter2/CHP_3/Full_Paper/20Apr20/TR_Growth_rates_December25.csv",
+               header=T,row.names=1)
+
+subset=subset(read, treatment!="RD4_YE5" & treatment!="RA5_RD4" & treatment!="RD4_NB7")
+subset=subset(read, treatment!="NB7_22" & treatment!="NB7_AX-22" & treatment!="RD4_22" & treatment!="RD4_AX-22")
+
+
+
+growth_order=c("RA4_AX","RA4","RA5_AX","RA5","RD4_AX","RD4",
+               'YC5_AX','YC5',"YE5_AX","YE5","NB4_AX","NB4","NB6_AX","NB6","NB7_AX",
+               "NB7","RA5_RD4", "RD4_YE5", "RD4_NB7")
+
+ subset$names2=paste(subset$isolate, subset$temp)
+
+ 
+ 
+ 
+ggplot1=ggplot(subset, aes(x=isolate, y=growth_rate, 
+                   fill=culture, 
+                   color=population)) +
+  geom_boxplot(alpha=.4) +
+  theme_classic() + 
+  scale_fill_manual(values=c('white','gray'))+
+  scale_color_manual(values=c('black','navy','firebrick', 'forestgreen')) +
+# scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',"gray70",'navy','gray70','firebrick','gray70','firebrick','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen')) +
+ # scale_color_manual(values=c('black','navy','black','navy','black','navy','black','navy','black','firebrick','black','firebrick','black','forestgreen','black','forestgreen','black','forestgreen','black','forestgreen' )) + 
+  theme(plot.margin=unit(c(0,0,0,0.25),"cm"))+
+   facet_grid(clonal~.,scales='free',space='free') +
+  theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+ # scale_y_continuous(name='Growth Rate')+
+  ylab(expression("Growth rate " * mu *  ~day^-1)) +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  #stat_compare_means(growth_rate~treatment, group.by='group',data=subset, 'anova')+
+  scale_x_discrete(name='') + coord_flip()
+ggplot1
+
+
+compare_means(growth_rate~treatment, group.by='isolate2',data=subset, 'anova',paired=TRUE,p.adjust.method = 'none')
+test=compare_means(growth_rate~treatment, group.by='isolate2',data=subset, 'anova',paired=TRUE,p.adjust.method = 'none')
+test=compare_means(growth_rate~isolate, group.by='names',data=subset, 'anova',paired=TRUE,p.adjust.method = 'none')
+test=compare_means(growth_rate~clonal, group.by='isolate2',data=subset, 'anova',paired=TRUE,p.adjust.method = 'none')
+test=compare_means(growth_rate~clonal, data=subset, 'anova',paired=TRUE,p.adjust.method = 'none', group.by='isolate2')
+test
+
+ggplot1+stat_pvalue_manual(data=test,label='p.adj' )
+
+
+```
+
+### used 10 january
+
+```{r fcm-growth, dpi=300, width=5,height=6}
+read<-read.csv(file="/Users/oliviaahern/Documents/PhD/Chapter2/CHP_3/Full_Paper/20Apr20/TR_Growth_rates_December25.csv",
+               header=T,row.names=1)
+
+subset=subset(read, treatment!="RD4_YE5" & treatment!="RA5_RD4" & treatment!="RD4_NB7")
+subset=subset(read, treatment!="NB7_22" & treatment!="NB7_AX-22" & treatment!="RD4_22" & treatment!="RD4_AX-22")
+subset=subset(read, isolate!="NB4" & isolate !="NB6" & isolate !="RA4" & isolate !="YC5")
+
+
+growth_order=c("RA4_AX","RA4","RA5_AX","RA5","RD4_AX","RD4",
+               'YC5_AX','YC5',"YE5_AX","YE5","NB4_AX","NB4","NB6_AX","NB6","NB7_AX",
+               "NB7","RA5_RD4", "RD4_YE5", "RD4_NB7")
+
+ subset$names2=paste(subset$isolate, subset$temp)
+subset2=subset
+ mono=subset(subset2, clonal=='monoclonal')
+ 
+ 
+ggplot1=ggplot(subset, aes(x=isolate, y=growth_rate, 
+                   fill=culture, 
+                   color=population)) +
+  geom_boxplot(alpha=.4) +
+  theme_classic() + 
+  scale_fill_manual(values=c('white','gray'))+
+  scale_color_manual(values=c('black','navy','firebrick', 'forestgreen')) +
+# scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',"gray70",'navy','gray70','firebrick','gray70','firebrick','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen')) +
+ # scale_color_manual(values=c('black','navy','black','navy','black','navy','black','navy','black','firebrick','black','firebrick','black','forestgreen','black','forestgreen','black','forestgreen','black','forestgreen' )) + 
+  theme(plot.margin=unit(c(0,0,0,0.25),"cm"))+
+   facet_grid(clonal~.,scales='free',space='free') +
+ #theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+      theme(legend.position="none",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+
+ # scale_y_continuous(name='Growth Rate')+
+  ylab(expression("Growth rate " * mu *  ~day^-1)) +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  #stat_compare_means(growth_rate~treatment, group.by='group',data=subset, 'anova')+
+  scale_x_discrete(name='') +coord_flip()
+ggplot1
+
+
+
+read=read.csv(file='/Users/oliviaahern/Documents/GitHub/MS2/ms2_fvfm.csv',header=T,row.names=1)
+dim(read)
+head(read)
+
+read2=subset(read, strain!="NB4" & strain !="NB6" & strain !="RA4" & strain !="YC5")
+
+gplot2=ggplot(read2, 
+             aes(x=strain, y=fv,
+                 color=factor(population), fill=factor(bact)))+
+  geom_boxplot(alpha=.4) +
+  theme_classic() + 
+  scale_fill_manual(values=c('white','gray'))+
+  scale_color_manual(values=c("navy","firebrick","forestgreen")) +
+# theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+    theme(legend.position="none",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+
+ # scale_y_continuous(name='Growth Rate')+
+  ylab("(Fm/Fo)/Fm") +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  #stat_compare_means(growth_rate~treatment, group.by='group',data=subset, 'anova')+
+  scale_x_discrete(name='')+ coord_flip()
+ none
+cowplot::plot_grid(ggplot1, gplot2, 
+                   rel_heights = c(1.7,1),
+                   nrow=2,
+                   align='h',
+                   axis='l',
+                   byrow=TRUE, labels='auto')
+       #           rel_widths = c(1.7,1))
+
+a=aov(read$fv ~read$strain*read$bact)
+tuk=TukeyHSD(a)
+par(mar=c(5,10,1,1))
+plot(tuk,las=2)
+
+data=data.frame(read2)
+data %>%
+  group_by(strain, bact) %>%
+  get_summary_stats(fv, type = "mean_sd")
+
+data %>%
+  group_by(strain, bact) %>%
+  shapiro_test(fv)
+
+model <- lm(fv ~ strain * bact, data = data)
+
+data %>%
+  group_by(strain) %>%
+  anova_test(fv ~ bact, error = model)
+
+
+mono=subset(subset2, clonal=='monoclonal' & temp =="18")
+
+a=aov(mono$growth~mono$population)
+summary(a)
+tuk=TukeyHSD(a)
+plot(tuk,las=2)
+range(mono$growth_rate
+      )
+
+a=aov(subset$growth~subset$clonal)
+summary(a)
+tuk=TukeyHSD(a)
+plot(tuk,las=2)
+
+a=aov(subset$growth~subset$isolate*subset$culture)
+summary(a)
+tuk=TukeyHSD(a)
+plot(tuk,las=2)
+
+model <- lm(growth_rate ~ isolate * bact, data = subset2)
+
+data %>%
+  group_by(strain) %>%
+  anova_test(fv ~ bact, error = model)
+
+
+```
+
+```{r}
+boxplot(read$Growth~read$Geno)
+a=aov(read$Growth~read$Geno)
+summary(a)
+tuk=TukeyHSD(a)
+plot(tuk,las=2)
+
+boxplot(read$Growth~read$Pop)
+a=aov(read$Growth~read$Pop)
+summary(a)
+tuk=TukeyHSD(a)
+plot(tuk,las=2)
+
+
+```
+
+
+```{r}
+growth_all=read
+ growth_all$names2=paste(growth_all$isolate, growth_all$temp)
+  ggplot1=ggplot(growth_all, aes(x=names2,y=growth_rate, 
+                   fill=factor(treatment, level=growth_order), 
+                   color=factor(treatment, level=growth_order))) +
+  geom_boxplot(alpha=.4) +
+  theme_classic() + 
+  scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',"gray70",'navy','gray70','firebrick','gray70','firebrick','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen')) +
+  scale_color_manual(values=c('black','navy','black','navy','black','navy','black','navy','black','firebrick','black','firebrick','black','forestgreen','black','forestgreen','black','forestgreen','black','forestgreen' )) +
+  theme(plot.margin=unit(c(0,0,0,0.25),"cm"))+
+  # facet_wrap(~treat2,scales="free") +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) + 
+  scale_y_continuous(name='Growth Rate')+
+  #stat_compare_means(growth_rate~treatment, group.by='group',data=subset, 'anova')+
+  scale_x_discrete(name='') + coord_flip()
+ggplot1
+
+ggplot1 + stat_compare_means(growth_rate~names, group.by='group',data=growth_all, 'anova', paired=TRUE)
+
+
+read<-read.csv(file="/Users/oliviaahern/Documents/PhD/Chapter2/CHP_3/Full_Paper/20Apr20/TR_Growth_rates_December25.csv",
+               header=T,row.names=1)
+
+subset=subset(read, treatment!="RD4_YE5" & treatment!="RA5_RD4" & treatment!="RD4_NB7")
+subset=subset(read, treatment!="NB7_22" & treatment!="NB7_AX-22" & treatment!="RD4_22" & treatment!="RD4_AX-22")
+
+
+
+growth_order=c("RA4_AX","RA4","RA5_AX","RA5","RD4_AX","RD4",
+               'YC5_AX','YC5',"YE5_AX","YE5","NB4_AX","NB4","NB6_AX","NB6","NB7_AX",
+               "NB7","RA5_RD4", "RD4_YE5", "RD4_NB7")
+
+ subset$names2=paste(subset$isolate, subset$temp)
+
+ subset2=subset(subset, population !="multi")
+ 
+ a=aov(subset2$growth_rate~subset2$population)
+ tuk=TukeyHSD(a)
+plot(tuk)
+
+
+ a=aov(subset2$growth_rate~subset2$isolate)
+ tuk=TukeyHSD(a)
+plot(tuk,las=2)
+
+```
+
+
+
+
+## FCM Plots
+```{r fcm-plot, dpi=300, width=5,height=6}
+
+library(ggplot2)
+library(gridExtra)
+
+read=read.csv(file='/Users/oliviaahern/Documents/R/PhD/Chp2/FCM_Raw_Files/aggregate_fcm2.csv',header=T)
+
+
+data1=read
+#data1$Treat = with(data1, order(Treat, Pop))
+#data1[with(data1, order(Treat, Pop)), ]
+lev_order=c("RA4-AX",'RA4-18', 'RA5-AX',"RA5","RD4_18_AX","RD4_18",
+            "RD4-22-AX","RD4-22","YC5-AX","YC5","YE5-AX","YE5",
+            'NB4-AX','NB4',"NB6-AX","NB6","NB7-18-AX","NB7-18",
+            'NB7-22-AX',"NB7-22")
+
+plot1=ggplot(data1, 
+             aes(y=FSC,color=factor(Treat, level=lev_order),fill=factor(Treat, level=lev_order),x=factor(Treat, level=lev_order))) + 
+  geom_violin(alpha=.4, trim=TRUE, scale='width', draw_quantiles  = c(0.25, 0.5, 0.75)) +
+  theme_classic()+
+  scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',"gray70",'navy',
+                             'gray70','firebrick','gray70','firebrick',
+                             'gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen')
+  ) +
+  scale_color_manual(values=c('black','navy','black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen','black','forestgreen' )) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) +
+  scale_y_continuous(name='FSC', limits=quantile(data1$FSC, c(0.001, 0.999)))+
+  scale_x_discrete(name='')
+
+## density plots
+
+
+
+plot2=ggplot(data1, 
+             aes(y=SSC,color=factor(Treat, level=lev_order),fill=factor(Treat, level=lev_order),x=factor(Treat, level=lev_order))) + 
+  geom_violin(alpha=.4, trim=TRUE, scale='width', draw_quantiles  = c(0.25, 0.5, 0.75)) +
+  theme_classic()+
+  scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',"gray70",'navy',
+                             'gray70','firebrick','gray70','firebrick',
+                             'gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen')
+  ) +
+  scale_color_manual(values=c('black','navy','black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen','black','forestgreen' )) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) +
+  scale_y_continuous(name='SSC', 
+                     limits=quantile(data1$FSC, c(0.001, 0.999)))+
+  scale_x_discrete(name='')
+
+
+plot3=ggplot(data1, 
+             aes(y=RED,color=factor(Treat, level=lev_order),fill=factor(Treat, level=lev_order),x=factor(Treat, level=lev_order))) + 
+  geom_violin(alpha=.4, trim=TRUE, scale='width', 
+              draw_quantiles  = c(0.25, 0.5, 0.75)) +
+  #geom_boxplot(width=.1, outlier.colour='white', outlier.fill='white') +
+  #geom_jitter(height = 0, width = 0.1) +
+  theme_classic()+
+  scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',"gray70",'navy',
+                             'gray70','firebrick','gray70','firebrick',
+                             'gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen')
+  ) +
+  scale_color_manual(values=c('black','navy','black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen','black','forestgreen' )) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+ # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) +
+  scale_y_continuous(name='692/40 mm', limits=quantile(data1$FSC, c(0.001, 0.999))) +
+  scale_x_discrete(name='')
+#plot3
+#grid.arrange(plota,plot3)
+
+
+#ggsave('fcmplot.svg',width=5,height=6)     
+#pdf('fcmplot2.pdf',width=6,height=10)
+grid.arrange(ggplot1,plot1,plot2,plot3,
+             nrow=4,
+             padding=c(0,0,0,0,0,0,0,0,0,0))
+
+#dev.off()
+#### try geom ridges
+
+data1$names=paste(data1$Diatom, data1$Temp,data1$Bact)
+
+plot1=ggplot(data1, aes(FSC,y=names,color=Diatom, fill=Bact)) +
+  geom_density_ridges() +
+  theme_classic()+
+ # scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',"gray70",'navy',
+  #                           'gray70','firebrick','gray70','firebrick',
+ #                            'gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen')
+ # ) +
+  scale_fill_manual(values=c('gray',"green" )) +
+  scale_color_manual(values=c('black','navy','black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen','black','forestgreen' )) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) + 
+  scale_x_continuous(name='FSC', limits=quantile(data1$FSC, c(0.001, 0.999)))  + scale_y_discrete(name='')
+  #scale_x_discrete(name='')
+plot1
+
+ plot2=ggplot(data1, aes(SSC,y=names,color=factor(Treat, level=lev_order), fill=factor(Treat, level=lev_order))) +
+  geom_density_ridges() +
+  theme_classic()+
+  scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',"gray70",'navy',
+                             'gray70','firebrick','gray70','firebrick',
+                             'gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen')
+  ) +
+  scale_color_manual(values=c('black','navy','black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen','black','forestgreen' )) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) +
+  scale_x_continuous(name='SSC', limits=quantile(data1$SSC, c(0.001, 0.999))) + #+facet_wrap(~Pop, scales="free")
+  scale_y_discrete(name='')
+  #scale_x_discrete(name='')
+plot3=ggplot(data1, aes(RED,y=names,color=factor(Treat, level=lev_order), fill=factor(Treat, level=lev_order))) +
+  geom_density_ridges() +
+  theme_classic()+
+  scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',"gray70",'navy',
+                             'gray70','firebrick','gray70','firebrick',
+                             'gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen')
+  ) +
+  scale_color_manual(values=c('black','navy','black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen','black','forestgreen' )) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) +
+  scale_x_continuous(name='RED', limits=quantile(data1$RED, c(0.001, 0.999))) + #+facet_wrap(~Pop, scales="free")
+  scale_y_discrete(name='')
+  #scale_x_discrete(name='')
+cowplot::plot_grid(plot1,plot2,plot3,ncol=3)
+
+
+```
+
+
+
+#### bad
+```{r}
+## add diatom growht rates first 
+read=read.csv(file='/Users/oliviaahern/Documents/R/PhD/Chp2/FCM_Raw_Files/aggregate_fcm2.csv',header=T)
+data1=subset(read, Temp != "22")
+
+#data1$Treat = with(data1, order(Treat, Pop))
+#data1[with(data1, order(Treat, Pop)), ]
+lev_order=c("RA4-AX",'RA4-18', 'RA5-AX',"RA5","RD4_18_AX","RD4_18",
+            "YC5-AX","YC5","YE5-AX","YE5",
+            'NB4-AX','NB4',"NB6-AX","NB6","NB7-18-AX","NB7-18")
+library(ggridges)
+
+data1$names=paste(data1$Diatom,data1$Bact)
+
+plot1=ggplot(data1, aes(FSC,y=names,color=factor(Treat, level=lev_order), fill=factor(Treat, level=lev_order))) +
+  geom_density_ridges() +
+  theme_classic()+
+  scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',"gray70",'navy',
+                             'gray70','firebrick','gray70','firebrick',
+                             'gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen')
+  ) +
+  scale_color_manual(values=c('black','navy','black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen','black','forestgreen' )) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) + 
+  scale_x_continuous(name='FSC', limits=quantile(data1$FSC, c(0.001, 0.999)))  + scale_y_discrete(name='')
+  #scale_x_discrete(name='')
+plot1
+
+ plot2=ggplot(data1, aes(SSC,y=names,color=factor(Treat, level=lev_order), fill=factor(Treat, level=lev_order))) +
+  geom_density_ridges() +
+  theme_classic()+
+  scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',"gray70",'navy',
+                             'gray70','firebrick','gray70','firebrick',
+                             'gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen')
+  ) +
+  scale_color_manual(values=c('black','navy','black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen','black','forestgreen' )) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) +
+  scale_x_continuous(name='SSC', limits=quantile(data1$FSC, c(0.001, 0.999))) + #+facet_wrap(~Pop, scales="free")
+  scale_y_discrete(name='')
+  #scale_x_discrete(name='')
+plot3=ggplot(data1, aes(RED,y=names,color=factor(Treat, level=lev_order), fill=factor(Treat, level=lev_order))) +
+  geom_density_ridges() +
+  theme_classic()+
+  scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',"gray70",'navy',
+                             'gray70','firebrick','gray70','firebrick',
+                             'gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70','forestgreen')
+  ) +
+  scale_color_manual(values=c('black','navy','black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen','black','forestgreen' )) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) +
+  scale_x_continuous(name='RED', limits=quantile(data1$RED, c(0.001, 0.999))) + #+facet_wrap(~Pop, scales="free")
+  scale_y_discrete(name='')
+  #scale_x_discrete(name='')
+cowplot::plot_grid(plot1,plot2,plot3,ncol=3)
+
+
+```
+
+#### geom density plots gooder
+
+```{r}
+## add diatom growht rates first 
+
+read=read.csv(file='/Users/oliviaahern/Documents/R/PhD/Chp2/FCM_Raw_Files/aggregate_fcm2.csv',header=T)
+data1=subset(read, Temp != "22")
+
+#data1$Treat = with(data1, order(Treat, Pop))
+#data1[with(data1, order(Treat, Pop)), ]
+lev_order=c("RA4-AX",'RA4-18', 'RA5-AX',"RA5","RD4_18_AX","RD4_18",
+            "YC5-AX","YC5","YE5-AX","YE5",
+            'NB4-AX','NB4',"NB6-AX","NB6","NB7-18-AX","NB7-18")
+data1$names=paste(data1$Diatom, data1$Temp,data1$Bact)
+data1$naems2=paste(data1$Diatom)
+
+
+
+
+plot1=ggplot(data1, aes(FSC,y=naems2,color=factor(Treat, level=lev_order), fill=factor(Treat, level=lev_order))) +
+  geom_density_ridges(alpha=0.5) +
+  theme_classic()+
+  scale_fill_manual(values=c("white",'navy',"white",'navy',"white",'navy',
+                             'white','firebrick','white','firebrick',
+                             'white','forestgreen','white','forestgreen','white','forestgreen','white')
+  ) +
+  scale_color_manual(values=c('black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen')) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) + 
+  scale_x_continuous(name='FSC', limits=quantile(data1$FSC, c(0.01, 0.999)))  + scale_y_discrete(name='')
+  #scale_x_discrete(name='')
+plot1
+
+
+
+ plot2=ggplot(data1, aes(SSC,y=naems2,color=factor(Treat, level=lev_order), fill=factor(Treat, level=lev_order))) +
+  geom_density_ridges(alpha=0.5) +
+  theme_classic()+
+  scale_fill_manual(values=c("white",'navy',"white",'navy',"white",'navy',
+                             'white','firebrick','white','firebrick',
+                             'white','forestgreen','white','forestgreen','white','forestgreen','white')
+  ) +
+  scale_color_manual(values=c('black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen')) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) +
+  scale_x_continuous(name='SSC', limits=quantile(data1$SSC, c(0.01, 0.999))) + #+facet_wrap(~Pop, scales="free")
+  scale_y_discrete(name='')
+  #scale_x_discrete(name='')
+plot3=ggplot(data1, aes(RED,y=naems2,color=factor(Treat, level=lev_order), fill=factor(Treat, level=lev_order))) +
+  geom_density_ridges(alpha=0.5) +
+  theme_classic()+
+  scale_fill_manual(values=c("white",'navy',"white",'navy',"white",'navy',
+                             'white','firebrick','white','firebrick',
+                             'white','forestgreen','white','forestgreen','white','forestgreen','white')
+  ) +
+  scale_color_manual(values=c('black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen')) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) +
+  scale_x_continuous(name='692/40 mm', limits=quantile(data1$RED, c(0.01, 0.999))) + #+facet_wrap(~Pop, scales="free")
+  scale_y_discrete(name='')
+  #scale_x_discrete(name='')
+cowplot::plot_grid(plot1,plot2,plot3,ncol=3)
+
+plot4=ggplot(data1, aes(GREEN,y=naems2,color=factor(Treat, level=lev_order), fill=factor(Treat, level=lev_order))) +
+  geom_density_ridges(alpha=0.5) +
+  theme_classic()+
+    scale_fill_manual(values=c("white",'navy',"white",'navy',"white",'navy',
+                             'white','firebrick','white','firebrick',
+                             'white','forestgreen','white','forestgreen','white','forestgreen','white')
+  ) +
+  scale_color_manual(values=c('black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen')) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) +
+  scale_x_continuous(name='692/40 mm', limits=quantile(data1$GREEN, c(0.01, 0.999))) + #+facet_wrap(~Pop, scales="free")
+  scale_y_discrete(name='')
+  #scale_x_discrete(name='')
+cowplot::plot_grid(plot1,plot2,plot3,ncol=3)
+
+cowplot::plot_grid(plot1,plot2,plot3,plot4,ncol=4)
+
+```
+
+##### try means comparing means ratio of means
+
+this paper
+https://link.springer.com/content/pdf/10.1007/s11356-022-24255-3.pdf
+
+```{r}
+## add diatom growht rates first 
+
+read=read.csv(file='/Users/oliviaahern/Documents/R/PhD/Chp2/FCM_Raw_Files/aggregate_fcm2.csv',header=T)
+data1=subset(read, Temp != "22")
+
+#data1$Treat = with(data1, order(Treat, Pop))
+#data1[with(data1, order(Treat, Pop)), ]
+lev_order=c("RA4-AX",'RA4-18', 'RA5-AX',"RA5","RD4_18_AX","RD4_18",
+            "YC5-AX","YC5","YE5-AX","YE5",
+            'NB4-AX','NB4',"NB6-AX","NB6","NB7-18-AX","NB7-18")
+data1$names=paste(data1$Diatom, data1$Temp,data1$Bact)
+data1$naems2=paste(data1$Diatom)
+
+ye5_ax=subset(data1, Diatom =="YE5" & Bact =="Axenic")
+ye5x=subset(data1, Diatom=="YE5" & Bact =="Xenic")
+
+mean(ye5x$FSC)/mean(ye5_ax$FSC)
+mean(ye5x$SSC)/mean(ye5_ax$SSC)
+mean(ye5x$RED)/mean(ye5_ax$RED)
+mean(ye5x$GREEN)/mean(ye5_ax$GREEN)
+
+ratio_data <- data1 %>%
+  group_by(Diatom, Bact) %>%
+  summarize(
+    # Calculate the ratio: mean(mpg) / mean(hp)
+    mpg_hp_ratio = mean(FSC) ,
+    .groups = 'drop' # Drop the grouping structure after summarizing
+  )
+
+ratio_data_a=subset(ratio_data, Bact=="Axenic")
+ratio_data_b=subset(ratio_data, Bact=="Xenic")
+
+div=ratio_data_b$mpg_hp_ratio/ratio_data_a$mpg_hp_ratio
+string=ratio_data_b$Diatom
+div_fsc=data.frame(div)
+row.names(div_fsc)=string
+div_fsc$population = c("PopC","PopC","PopC","PopA","PopA","PopA","PopB","PopB")
+
+
+
+
+plot1=ggplot(data1, aes(FSC,y=naems2,color=factor(Treat, level=lev_order), fill=factor(Treat, level=lev_order))) +
+  geom_density_ridges(alpha=0.5) +
+  theme_classic()+
+  scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',
+                             'gray70','firebrick','gray70','firebrick',
+                             'gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70')
+  ) +
+  scale_color_manual(values=c('black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen')) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) + 
+  scale_x_continuous(name='FSC', limits=quantile(data1$FSC, c(0.01, 0.999)))  + scale_y_discrete(name='')
+  #scale_x_discrete(name='')
+plot1
+
+
+
+ plot2=ggplot(data1, aes(SSC,y=naems2,color=factor(Treat, level=lev_order), fill=factor(Treat, level=lev_order))) +
+  geom_density_ridges(alpha=0.5) +
+  theme_classic()+
+  scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',
+                             'gray70','firebrick','gray70','firebrick',
+                             'gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70')
+  ) +
+  scale_color_manual(values=c('black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen')) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) +
+  scale_x_continuous(name='SSC', limits=quantile(data1$SSC, c(0.01, 0.999))) + #+facet_wrap(~Pop, scales="free")
+  scale_y_discrete(name='')
+  #scale_x_discrete(name='')
+plot3=ggplot(data1, aes(RED,y=naems2,color=factor(Treat, level=lev_order), fill=factor(Treat, level=lev_order))) +
+  geom_density_ridges(alpha=0.5) +
+  theme_classic()+
+    scale_fill_manual(values=c("gray70",'navy',"gray70",'navy',"gray70",'navy',
+                             'gray70','firebrick','gray70','firebrick',
+                             'gray70','forestgreen','gray70','forestgreen','gray70','forestgreen','gray70')
+  ) +
+  scale_color_manual(values=c('black','navy',
+                              'black','navy','black','navy','black','firebrick','black','firebrick',
+                              'black','forestgreen','black','forestgreen','black','forestgreen')) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size=8)) +
+  scale_x_continuous(name='692/40 mm', limits=quantile(data1$RED, c(0.01, 0.999))) + #+facet_wrap(~Pop, scales="free")
+  scale_y_discrete(name='')
+  #scale_x_discrete(name='')
+
+
+
+
+```
+
+
+# fv/fm
+```{r}
+read=read.csv(file='/Users/oliviaahern/Documents/GitHub/MS2/ms2_fvfm.csv',header=T,row.names=1)
+dim(read)
+head(read)
+
+ggplot(read, 
+             aes(x=strain, y=fv,
+                 color=factor(population), fill=factor(bact)))+
+  geom_boxplot(alpha=.4) +
+  theme_classic() + 
+  scale_fill_manual(values=c('white','gray'))+
+  scale_color_manual(values=c("navy","firebrick","forestgreen")) +
+  theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+ # scale_y_continuous(name='Growth Rate')+
+  ylab("(Fm/Fo)/Fm") +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  #stat_compare_means(growth_rate~treatment, group.by='group',data=subset, 'anova')+
+  scale_x_discrete(name='')  + coord_flip()
+ 
+a=aov(read$fv ~read$strain*read$bact)
+tuk=TukeyHSD(a)
+par(mar=c(5,10,1,1))
+plot(tuk,las=2)
+
+data=data.frame(read)
+data %>%
+  group_by(strain, bact) %>%
+  get_summary_stats(fv, type = "mean_sd")
+
+data %>%
+  group_by(strain, bact) %>%
+  shapiro_test(fv)
+
+model <- lm(fv ~ strain * bact, data = data)
+
+data %>%
+  group_by(strain) %>%
+  anova_test(fv ~ bact, error = model)
+
+```
+
+
+
+# growth curves
+
+Figures for growth curves of the experiment 
+
+## Growth Curves
+```{r}
+read=read.csv(file='/Users/oliviaahern/Documents/R/PhD/Chp2/20Apr20/rotula_cellcounts.csv',header=T,row.names=1)
+dim(read)
+treatment=as.factor(read$treatment[1:48])
+
+dim(read)
+growth_data=data.frame(read[1:48,3:7])
+
+# get mean and standard deviation
+mean=aggregate(growth_data,by=list(treatment),FUN=mean,na.rm=T)
+mean=t(mean[,2:6])
+sd=aggregate(growth_data,by=list(treatment),FUN=sd,na.rm=T)
+sd=t(sd[,2:6])
+# set time
+time=c(0,2,3,4,5)
+```
+
+## Plot of Single Cultures  
+
+Plots of all single culture growth curves. The xenic is in black and axenic in gray. YE5 was siginificantly different than its axenic counterpart. 
+```{r}
+library(Hmisc)
+
+#plotting just the solos 
+{par(mfrow=c(2,4),mar=c(5,5,1,1))
+# NB4
+errbar(time,mean[,1],yplus=mean[,1]+sd[,1],yminus=mean[,1]-sd[,1],
+       ylim=c(100,50000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,2],yplus=mean[,2]+sd[,2],yminus=mean[,2]-sd[,2],col='gray70',
+       type='b',add=T)
+text(4,200,"NB4")
+#NB6
+errbar(time,mean[,3],yplus=mean[,3]+sd[,3],yminus=mean[,3]-sd[,3],
+       ylim=c(100,50000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,4],yplus=mean[,4]+sd[,4],yminus=mean[,4]-sd[,4],col='gray70',
+       type='b',add=T)
+text(4,200,"NB6")
+
+#NB7
+errbar(time,mean[,5],yplus=mean[,5]+sd[,5],yminus=mean[,5]-sd[,5],
+       ylim=c(100,50000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,6],yplus=mean[,6]+sd[,6],yminus=mean[,6]-sd[,6],col='gray70',
+       type='b',add=T)
+text(4,200,"NB7")
+
+#RA4
+errbar(time,mean[,7],yplus=mean[,7]+sd[,7],yminus=mean[,7]-sd[,7],
+       ylim=c(100,50000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,8],yplus=mean[,8]+sd[,8],yminus=mean[,8]-sd[,8],col='gray70',
+       type='b',add=T)
+text(4,200,"RA4")
+
+#RA5
+errbar(time,mean[,9],yplus=mean[,9]+sd[,9],yminus=mean[,9]-sd[,9],
+       ylim=c(100,50000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,10],yplus=mean[,10]+sd[,10],yminus=mean[,10]-sd[,10],col='gray70',
+       type='b',add=T)
+text(4,200,"RA5")
+
+#RD4
+errbar(time,mean[,11],yplus=mean[,11]+sd[,11],yminus=mean[,11]-sd[,11],
+       ylim=c(100,50000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,12],yplus=mean[,12]+sd[,12],yminus=mean[,12]-sd[,12],col='gray70',
+       type='b',add=T)
+text(4,200,"RD4")
+
+#YC5
+errbar(time,mean[,13],yplus=mean[,13]+sd[,13],yminus=mean[,13]-sd[,13],
+       ylim=c(10,10000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,14],yplus=mean[,14]+sd[,14],yminus=mean[,14]-sd[,14],col='gray70',
+       type='b',add=T)
+text(4,20,"YC5")
+
+#YE5
+errbar(time,mean[,15],yplus=mean[,15]+sd[,15],yminus=mean[,15]-sd[,15],
+       ylim=c(100,50000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,16],yplus=mean[,16]+sd[,16],yminus=mean[,16]-sd[,16],col='gray70',
+       type='b',add=T)
+text(4,200,"YE5 *")
+
+
+}
+
+```
+## 22 Degree increases 
+```{r}
+temp_22=read[49:60,]
+treat22=temp_22$treatment
+temp_22_data=temp_22[,3:7]
+
+mean_22=aggregate(temp_22_data,by=list(treat22),FUN=mean,na.rm=T)
+mean_22=t(mean_22[,2:6])
+sd_22=aggregate(temp_22_data,by=list(treat22),FUN=sd,na.rm=T)
+sd_22=t(sd_22[,2:6])
+
+# plotting
+{par(mfrow=c(2,2),mar=c(5,5,1,1))
+  # NB7 18
+errbar(time,mean[,5],yplus=mean[,5]+sd[,5],yminus=mean[,5]-sd[,5],
+       ylim=c(100,60000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,6],yplus=mean[,6]+sd[,6],yminus=mean[,6]-sd[,6],col='gray70',
+       type='b',add=T)
+text(4,200,"NB7 18")
+ # NB7 22
+errbar(time,mean_22[,1],yplus=mean_22[,1]+sd_22[,1],yminus=mean_22[,1]-sd_22[,1],
+       ylim=c(100,60000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean_22[,2],yplus=mean_22[,2]+sd_22[,2],yminus=mean_22[,2]-sd_22[,2],
+       col='gray70',
+       type='b',add=T)
+text(4,200,"NB7 22")
+
+#RD4
+errbar(time,mean[,11],yplus=mean[,11]+sd[,11],yminus=mean[,11]-sd[,11],
+       ylim=c(100,50000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,12],yplus=mean[,12]+sd[,12],yminus=mean[,12]-sd[,12],col='gray70',
+       type='b',add=T)
+text(4,200,"RD4 18")
+# RD4 22
+errbar(time,mean_22[,3],yplus=mean_22[,3]+sd_22[,3],yminus=mean_22[,3]-sd_22[,3],
+       ylim=c(100,60000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean_22[,4],yplus=mean_22[,4]+sd_22[,4],yminus=mean_22[,4]-sd_22[,4],
+       col='gray70',
+       type='b',add=T)
+text(4,200,"RD4 22")
+}
+
+```
+
+## Growth Curves Double 
+```{r}
+doubles=read[61:69,]
+treat_doub=doubles$treatment
+doubles_data=doubles[,3:7]
+
+mean_db=aggregate(doubles_data,by=list(treat_doub),FUN=mean,na.rm=T)
+mean_db=t(mean_db[,2:6])
+sd_db=aggregate(doubles_data,by=list(treat_doub),FUN=sd,na.rm=T)
+sd_db=t(sd_db[,2:6])
+
+# plotting 
+{par(mfrow=c(1,3),mar=c(5,5,1,1))
+  # RA4-RD4
+errbar(time,mean_db[,1],yplus=mean_db[,1]+sd_db[,1],yminus=mean_db[,1]-sd_db[,1],
+       ylim=c(100,60000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+text(4,200,"RD4 + RA4")
+
+# RD4-NB7
+errbar(time,mean_db[,2],yplus=mean_db[,2]+sd_db[,2],yminus=mean_db[,2]-sd_db[,2],
+       ylim=c(100,60000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+text(4,200,"RD4 + NB7")
+
+# YD4_YE5
+errbar(time,mean_db[,3],yplus=mean_db[,3]+sd_db[,3],yminus=mean_db[,3]-sd_db[,3],
+       ylim=c(100,60000),log='y',type='b',
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+text(4,200,"RD4 + YE5")
+}
+
+```
+### Plot all of them
+```{r}
+{par(mfrow=c(3,5),mar=c(5,4,1,1))
+  # NB4
+  errbar(time,mean[,1],yplus=mean[,1]+sd[,1],yminus=mean[,1]-sd[,1],
+         ylim=c(100,50000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,2],yplus=mean[,2]+sd[,2],yminus=mean[,2]-sd[,2],col='gray70',
+         type='b',add=T)
+  text(1,200,"NB4 18",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  
+  #NB6
+  errbar(time,mean[,3],yplus=mean[,3]+sd[,3],yminus=mean[,3]-sd[,3],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,4],yplus=mean[,4]+sd[,4],yminus=mean[,4]-sd[,4],col='gray70',
+         type='b',add=T)
+  text(1,200,"NB6 18", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #NB7
+  errbar(time,mean[,5],yplus=mean[,5]+sd[,5],yminus=mean[,5]-sd[,5],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,6],yplus=mean[,6]+sd[,6],yminus=mean[,6]-sd[,6],col='gray70',
+         type='b',add=T)
+  text(1,200,"NB7 18", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #RA4
+  errbar(time,mean[,7],yplus=mean[,7]+sd[,7],yminus=mean[,7]-sd[,7],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,8],yplus=mean[,8]+sd[,8],yminus=mean[,8]-sd[,8],col='gray70',
+         type='b',add=T)
+  text(1,200,"RA4 18", font =2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #RA5
+  errbar(time,mean[,9],yplus=mean[,9]+sd[,9],yminus=mean[,9]-sd[,9],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,10],yplus=mean[,10]+sd[,10],yminus=mean[,10]-sd[,10],col='gray70',
+         type='b',add=T)
+  text(1,200,"RA5 18",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #RD4
+  errbar(time,mean[,11],yplus=mean[,11]+sd[,11],yminus=mean[,11]-sd[,11],
+         ylim=c(100,50000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,12],yplus=mean[,12]+sd[,12],yminus=mean[,12]-sd[,12],col='gray70',
+         type='b',add=T)
+  text(1,200,"RD4 18",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #YC5
+  errbar(time,mean[,13],yplus=mean[,13]+sd[,13],yminus=mean[,13]-sd[,13],
+         ylim=c(10,10000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,14],yplus=mean[,14]+sd[,14],yminus=mean[,14]-sd[,14],col='gray70',
+         type='b',add=T)
+  text(1,20,"YC5 18",font=2)
+  axis(2,at=c(10,100,1250,5000))
+  segments(0,1,0,60000,col='gray90',lty=2)
+  segments(2,1,2,60000,col='gray90',lty=2)
+  segments(3,1,3,60000,col='gray90',lty=2)
+  segments(4,1,4,60000,col='gray90',lty=2)
+  segments(5,1,5,60000,col='gray90',lty=2)
+  
+  #YE5
+  errbar(time,mean[,15],yplus=mean[,15]+sd[,15],yminus=mean[,15]-sd[,15],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,16],yplus=mean[,16]+sd[,16],yminus=mean[,16]-sd[,16],col='gray70',
+         type='b',add=T)
+  text(1,200,"YE5 18*", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  
+  # NB7 22
+  errbar(time,mean_22[,1],yplus=mean_22[,1]+sd_22[,1],yminus=mean_22[,1]-sd_22[,1],
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean_22[,2],yplus=mean_22[,2]+sd_22[,2],yminus=mean_22[,2]-sd_22[,2],
+         col='gray70',
+         type='b',add=T)
+  text(1,200,"NB7 22",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  # RD4 22
+  errbar(time,mean_22[,3],yplus=mean_22[,3]+sd_22[,3],yminus=mean_22[,3]-sd_22[,3],
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean_22[,4],yplus=mean_22[,4]+sd_22[,4],yminus=mean_22[,4]-sd_22[,4],
+         col='gray70',
+         type='b',add=T)
+  text(1,200,"RD4 22",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  # RA4-RD4
+  errbar(time,mean_db[,1],yplus=mean_db[,1]+sd_db[,1],yminus=mean_db[,1]-sd_db[,1],
+         ylim=c(100,60000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab="Time (days)",
+         yaxt='n')
+  text(1,200,"RD4 + RA4",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  # RD4-NB7
+  errbar(time,mean_db[,2],yplus=mean_db[,2]+sd_db[,2],yminus=mean_db[,2]-sd_db[,2],
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  text(1,200,"RD4 + NB7",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  # YD4_YE5
+  errbar(time,mean_db[,3],yplus=mean_db[,3]+sd_db[,3],yminus=mean_db[,3]-sd_db[,3],
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  text(1,200,"RD4 + YE5",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+}
+
+```
+
+
+
+### Plot all of them no 22
+```{r}
+{par(mfrow=c(3,5),mar=c(5,4,1,1))
+  # NB4
+  errbar(time,mean[,1],yplus=mean[,1]+sd[,1],yminus=mean[,1]-sd[,1],
+         ylim=c(100,50000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,2],yplus=mean[,2]+sd[,2],yminus=mean[,2]-sd[,2],col='gray70',
+         type='b',add=T)
+  text(1,200,"NB4 18",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  
+  #NB6
+  errbar(time,mean[,3],yplus=mean[,3]+sd[,3],yminus=mean[,3]-sd[,3],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,4],yplus=mean[,4]+sd[,4],yminus=mean[,4]-sd[,4],col='gray70',
+         type='b',add=T)
+  text(1,200,"NB6 18", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #NB7
+  errbar(time,mean[,5],yplus=mean[,5]+sd[,5],yminus=mean[,5]-sd[,5],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,6],yplus=mean[,6]+sd[,6],yminus=mean[,6]-sd[,6],col='gray70',
+         type='b',add=T)
+  text(1,200,"NB7 18", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #RA4
+  errbar(time,mean[,7],yplus=mean[,7]+sd[,7],yminus=mean[,7]-sd[,7],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,8],yplus=mean[,8]+sd[,8],yminus=mean[,8]-sd[,8],col='gray70',
+         type='b',add=T)
+  text(1,200,"RA4 18", font =2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #RA5
+  errbar(time,mean[,9],yplus=mean[,9]+sd[,9],yminus=mean[,9]-sd[,9],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,10],yplus=mean[,10]+sd[,10],yminus=mean[,10]-sd[,10],col='gray70',
+         type='b',add=T)
+  text(1,200,"RA5 18",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #RD4
+  errbar(time,mean[,11],yplus=mean[,11]+sd[,11],yminus=mean[,11]-sd[,11],
+         ylim=c(100,50000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,12],yplus=mean[,12]+sd[,12],yminus=mean[,12]-sd[,12],col='gray70',
+         type='b',add=T)
+  text(1,200,"RD4 18",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #YC5
+  errbar(time,mean[,13],yplus=mean[,13]+sd[,13],yminus=mean[,13]-sd[,13],
+         ylim=c(10,10000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,14],yplus=mean[,14]+sd[,14],yminus=mean[,14]-sd[,14],col='gray70',
+         type='b',add=T)
+  text(1,20,"YC5 18",font=2)
+  axis(2,at=c(10,100,1250,5000))
+  segments(0,1,0,60000,col='gray90',lty=2)
+  segments(2,1,2,60000,col='gray90',lty=2)
+  segments(3,1,3,60000,col='gray90',lty=2)
+  segments(4,1,4,60000,col='gray90',lty=2)
+  segments(5,1,5,60000,col='gray90',lty=2)
+  
+  #YE5
+  errbar(time,mean[,15],yplus=mean[,15]+sd[,15],yminus=mean[,15]-sd[,15],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,16],yplus=mean[,16]+sd[,16],yminus=mean[,16]-sd[,16],col='gray70',
+         type='b',add=T)
+  text(1,200,"YE5 18*", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  
+
+  
+  # RA4-RD4
+  errbar(time,mean_db[,1],yplus=mean_db[,1]+sd_db[,1],yminus=mean_db[,1]-sd_db[,1],
+         ylim=c(100,60000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab="Time (days)",
+         yaxt='n')
+  text(1,200,"RD4 + RA4",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  # RD4-NB7
+  errbar(time,mean_db[,2],yplus=mean_db[,2]+sd_db[,2],yminus=mean_db[,2]-sd_db[,2],
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  text(1,200,"RD4 + NB7",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  # YD4_YE5
+  errbar(time,mean_db[,3],yplus=mean_db[,3]+sd_db[,3],yminus=mean_db[,3]-sd_db[,3],
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  text(1,200,"RD4 + YE5",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+}
+
+```
+
+### good Plot all of them no 22
+```{r}
+
+read=read.csv(file='/Users/oliviaahern/Documents/R/PhD/Chp2/20Apr20/rotula_cellcounts.csv',header=T,row.names=1)
+dim(read)
+treatment=as.factor(read$treatment[1:48])
+
+dim(read)
+growth_data=data.frame(read[1:48,3:7])
+
+# get mean and standard deviation
+mean=aggregate(growth_data,by=list(treatment),FUN=mean,na.rm=T)
+mean=t(mean[,2:6])
+sd=aggregate(growth_data,by=list(treatment),FUN=sd,na.rm=T)
+sd=t(sd[,2:6])
+# set time
+time=c(0,2,3,4,5)
+
+{par(mfrow=c(4,3),mar=c(2,2,1,1))
+  #RA4
+  errbar(time,mean[,7],yplus=mean[,7]+sd[,7],yminus=mean[,7]-sd[,7],
+         ylim=c(100,50000),log='y',type='b', col='navy', pch=21, bg='gray',
+         ylab="Cell Abundance (cells/mL)",
+         errbar.col='navy', cex=1.3,xaxt='n',
+         xlab=" ",
+         yaxt='n')
+  errbar(time,mean[,8],yplus=mean[,8]+sd[,8],yminus=mean[,8]-sd[,8],col='navy', pch=21, bg='white',
+         type='b',add=T,errbar.col='navy', cex=1.3)
+  text(1,200,"RA4", font =2)
+  axis(2,at=c(100,1000,12500,50000))
+  axis(1, at=c(0:5),label=FALSE)
+  legend("bottomright", legend=c("xenic",'axenic'), pch=21, pt.bg=c('grey','white'), bty='n')
+  
+  #RA5
+  errbar(time,mean[,9],yplus=mean[,9]+sd[,9],yminus=mean[,9]-sd[,9],
+         ylim=c(100,50000),log='y',type='b',col='navy', pch=21, bg='gray',errbar.col = 'navy',cex=1.3,
+         ylab=" ",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,10],yplus=mean[,10]+sd[,10],yminus=mean[,10]-sd[,10],col='navy', pch=21, bg='white',errbar.col = 'navy',cex=1.3,
+         type='b',add=T)
+  text(1,200,"RA5",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  axis(1, at=c(0:5),label=FALSE)
+
+  
+  #RD4
+  errbar(time,mean[,11],yplus=mean[,11]+sd[,11],yminus=mean[,11]-sd[,11],
+         ylim=c(100,50000),log='y',type='b',col='navy', pch=21, bg='gray',errbar.col = 'navy',cex=1.3,
+         ylab="Cell Abundance (cells/mL)",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,12],yplus=mean[,12]+sd[,12],yminus=mean[,12]-sd[,12],col='navy', pch=21,cex=1.3, bg='white',errbar.col = 'navy',
+         type='b',add=T)
+  text(1,200,"RD4",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+    axis(1, at=c(0:5),label=FALSE)
+
+  
+   
+
+  
+ 
+
+  
+  #YC5
+  errbar(time,mean[,13],yplus=mean[,13]+sd[,13],yminus=mean[,13]-sd[,13],col='firebrick', pch=21, bg='gray',errbar.col = 'firebrick',cex=1.3,
+         ylim=c(10,10000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,14],yplus=mean[,14]+sd[,14],yminus=mean[,14]-sd[,14],col='firebrick', pch=21, bg='white',errbar.col = 'firebrick',cex=1.3,
+         type='b',add=T)
+  text(1,20,"YC5",font=2)
+  axis(2,at=c(10,100,1250,5000))
+    axis(1, at=c(0:5),label=FALSE)
+
+  
+  #YE5
+  errbar(time,mean[,15],yplus=mean[,15]+sd[,15],yminus=mean[,15]-sd[,15],col='firebrick', pch=21, bg='gray',errbar.col = 'firebrick',cex=1.3,
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,16],yplus=mean[,16]+sd[,16],yminus=mean[,16]-sd[,16],col='firebrick', pch=21, bg='white',errbar.col = 'firebrick',cex=1.3,
+         type='b',add=T)
+  text(1,200,"YE5", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+    axis(1, at=c(0:5),label=FALSE)
+    
+    plot.new()
+
+  # NB4
+  errbar(time,mean[,1],yplus=mean[,1]+sd[,1],yminus=mean[,1]-sd[,1],col='forestgreen', pch=21, bg='gray',errbar.col = 'forestgreen',cex=1.3,
+         ylim=c(100,50000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,2],yplus=mean[,2]+sd[,2],yminus=mean[,2]-sd[,2],col='forestgreen', pch=21, bg='white',errbar.col = 'forestgreen',cex=1.3,
+         type='b',add=T)
+  text(1,200,"NB4",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+    axis(1, at=c(0:5),label=FALSE)
+
+  
+  
+  #NB6
+  errbar(time,mean[,3],yplus=mean[,3]+sd[,3],yminus=mean[,3]-sd[,3],col='forestgreen', pch=21, bg='gray',errbar.col = 'forestgreen',cex=1.3,
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,4],yplus=mean[,4]+sd[,4],yminus=mean[,4]-sd[,4],col='forestgreen', pch=21, bg='white',errbar.col = 'forestgreen',cex=1.3,
+         type='b',add=T)
+  text(1,200,"NB6", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+    axis(1, at=c(0:5),label=FALSE)
+
+  
+  #NB7
+  errbar(time,mean[,5],yplus=mean[,5]+sd[,5],yminus=mean[,5]-sd[,5],col='forestgreen', pch=21, bg='gray',errbar.col = 'forestgreen',cex=1.3,
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,6],yplus=mean[,6]+sd[,6],yminus=mean[,6]-sd[,6],col='forestgreen', pch=21, bg='white',errbar.col = 'forestgreen',cex=1.3,
+         type='b',add=T)
+  text(1,200,"NB7", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+      axis(1, at=c(0:5),label=FALSE)
+
+  
+
+  
+  # RA4-RD4
+  errbar(time,mean_db[,1],yplus=mean_db[,1]+sd_db[,1],yminus=mean_db[,1]-sd_db[,1],col='black', pch=21, bg='gray',errbar.col = 'black',cex=1.3,
+         ylim=c(100,60000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab=" ",
+         yaxt='n')
+  text(1,200,"RD4 + RA4",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+      axis(1, at=c(0:5),label=FALSE)
+
+  
+  # RD4-NB7
+  errbar(time,mean_db[,2],yplus=mean_db[,2]+sd_db[,2],yminus=mean_db[,2]-sd_db[,2],col='black', pch=21, bg='gray',errbar.col = 'black',cex=1.3,
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  text(1,200,"RD4 + NB7",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+      axis(1, at=c(0:5),label=FALSE)
+
+  
+  # YD4_YE5
+  errbar(time,mean_db[,3],yplus=mean_db[,3]+sd_db[,3],yminus=mean_db[,3]-sd_db[,3],col='black', pch=21, bg='gray',errbar.col = 'black',cex=1.3,
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab=" ",
+         yaxt='n')
+  text(1,200,"RD4 + YE5",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+      axis(1, at=c(0:5),label=FALSE)
+
+}
+
+```
+
+
+### Plot all of them no 22
+```{r}
+
+read=read.csv(file='/Users/oliviaahern/Documents/R/PhD/Chp2/20Apr20/rotula_cellcounts.csv',header=T,row.names=1)
+dim(read)
+treatment=as.factor(read$treatment[1:48])
+
+dim(read)
+growth_data=data.frame(read[1:48,3:7])
+
+# get mean and standard deviation
+mean=aggregate(growth_data,by=list(treatment),FUN=mean,na.rm=T)
+mean=t(mean[,2:6])
+sd=aggregate(growth_data,by=list(treatment),FUN=sd,na.rm=T)
+sd=t(sd[,2:6])
+# set time
+time=c(0,2,3,4,5)
+
+{par(mfrow=c(3,4),
+     mar=c(2,2,1,1))
+  #RA4
+  errbar(time,mean[,7],yplus=mean[,7]+sd[,7],yminus=mean[,7]-sd[,7],
+         ylim=c(100,50000),log='y',type='b', col='navy', pch=21, bg='gray',
+         ylab="Cell Abundance (cells/mL)",
+         errbar.col='navy', cex=1.3,xaxt='n',
+         xlab=" ",
+         yaxt='n')
+  errbar(time,mean[,8],yplus=mean[,8]+sd[,8],yminus=mean[,8]-sd[,8],col='navy', pch=21, bg='white',
+         type='b',add=T,errbar.col='navy', cex=1.3)
+  text(1,200,"RA4", font =2)
+  axis(2,at=c(100,1000,12500,50000))
+  axis(1, at=c(0:5),label=FALSE)
+  legend("bottomright", legend=c("xenic",'axenic'), pch=21, pt.bg=c('grey','white'), bty='n')
+  
+  #RA5
+  errbar(time,mean[,9],yplus=mean[,9]+sd[,9],yminus=mean[,9]-sd[,9],
+         ylim=c(100,50000),log='y',type='b',col='navy', pch=21, bg='gray',errbar.col = 'navy',cex=1.3,
+         ylab=" ",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,10],yplus=mean[,10]+sd[,10],yminus=mean[,10]-sd[,10],col='navy', pch=21, bg='white',errbar.col = 'navy',cex=1.3,
+         type='b',add=T)
+  text(1,200,"RA5",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  axis(1, at=c(0:5),label=FALSE)
+
+  
+  #RD4
+  errbar(time,mean[,11],yplus=mean[,11]+sd[,11],yminus=mean[,11]-sd[,11],
+         ylim=c(100,50000),log='y',type='b',col='navy', pch=21, bg='gray',errbar.col = 'navy',cex=1.3,
+         ylab="Cell Abundance (cells/mL)",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,12],yplus=mean[,12]+sd[,12],yminus=mean[,12]-sd[,12],col='navy', pch=21,cex=1.3, bg='white',errbar.col = 'navy',
+         type='b',add=T)
+  text(1,200,"RD4",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+    axis(1, at=c(0:5),label=FALSE)
+
+  
+   
+
+  
+ 
+
+  
+  #YC5
+  errbar(time,mean[,13],yplus=mean[,13]+sd[,13],yminus=mean[,13]-sd[,13],col='firebrick', pch=21, bg='gray',errbar.col = 'firebrick',cex=1.3,
+         ylim=c(10,10000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,14],yplus=mean[,14]+sd[,14],yminus=mean[,14]-sd[,14],col='firebrick', pch=21, bg='white',errbar.col = 'firebrick',cex=1.3,
+         type='b',add=T)
+  text(1,20,"YC5",font=2)
+  axis(2,at=c(10,100,1250,5000))
+    axis(1, at=c(0:5),label=FALSE)
+
+  
+  #YE5
+  errbar(time,mean[,15],yplus=mean[,15]+sd[,15],yminus=mean[,15]-sd[,15],col='firebrick', pch=21, bg='gray',errbar.col = 'firebrick',cex=1.3,
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,16],yplus=mean[,16]+sd[,16],yminus=mean[,16]-sd[,16],col='firebrick', pch=21, bg='white',errbar.col = 'firebrick',cex=1.3,
+         type='b',add=T)
+  text(1,200,"YE5", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+    axis(1, at=c(0:5),label=FALSE)
+    
+    plot.new()
+
+  # NB4
+  errbar(time,mean[,1],yplus=mean[,1]+sd[,1],yminus=mean[,1]-sd[,1],col='forestgreen', pch=21, bg='gray',errbar.col = 'forestgreen',cex=1.3,
+         ylim=c(100,50000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,2],yplus=mean[,2]+sd[,2],yminus=mean[,2]-sd[,2],col='forestgreen', pch=21, bg='white',errbar.col = 'forestgreen',cex=1.3,
+         type='b',add=T)
+  text(1,200,"NB4",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+    axis(1, at=c(0:5),label=FALSE)
+
+  
+  
+  #NB6
+  errbar(time,mean[,3],yplus=mean[,3]+sd[,3],yminus=mean[,3]-sd[,3],col='forestgreen', pch=21, bg='gray',errbar.col = 'forestgreen',cex=1.3,
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,4],yplus=mean[,4]+sd[,4],yminus=mean[,4]-sd[,4],col='forestgreen', pch=21, bg='white',errbar.col = 'forestgreen',cex=1.3,
+         type='b',add=T)
+  text(1,200,"NB6", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+    axis(1, at=c(0:5),label=FALSE)
+
+  
+  #NB7
+  errbar(time,mean[,5],yplus=mean[,5]+sd[,5],yminus=mean[,5]-sd[,5],col='forestgreen', pch=21, bg='gray',errbar.col = 'forestgreen',cex=1.3,
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,6],yplus=mean[,6]+sd[,6],yminus=mean[,6]-sd[,6],col='forestgreen', pch=21, bg='white',errbar.col = 'forestgreen',cex=1.3,
+         type='b',add=T)
+  text(1,200,"NB7", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+      axis(1, at=c(0:5),label=FALSE)
+
+  
+
+  
+  # RA4-RD4
+  errbar(time,mean_db[,1],yplus=mean_db[,1]+sd_db[,1],yminus=mean_db[,1]-sd_db[,1],col='black', pch=21, bg='gray',errbar.col = 'black',cex=1.3,
+         ylim=c(100,60000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab=" ",
+         yaxt='n')
+  text(1,200,"RD4 + RA4",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+      axis(1, at=c(0:5),label=FALSE)
+
+  
+  # RD4-NB7
+  errbar(time,mean_db[,2],yplus=mean_db[,2]+sd_db[,2],yminus=mean_db[,2]-sd_db[,2],col='black', pch=21, bg='gray',errbar.col = 'black',cex=1.3,
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  text(1,200,"RD4 + NB7",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+      axis(1, at=c(0:5),label=FALSE)
+
+  
+  # YD4_YE5
+  errbar(time,mean_db[,3],yplus=mean_db[,3]+sd_db[,3],yminus=mean_db[,3]-sd_db[,3],col='black', pch=21, bg='gray',errbar.col = 'black',cex=1.3,
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab=" ",
+         yaxt='n')
+  text(1,200,"RD4 + YE5",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+      axis(1, at=c(0:5),label=FALSE)
+
+}
+
+```
+
+
+
+### Jan10 just the subset of strains 
+```{r}
+
+read=read.csv(file='/Users/oliviaahern/Documents/R/PhD/Chp2/20Apr20/rotula_cellcounts.csv',header=T,row.names=1)
+dim(read)
+treatment=as.factor(read$treatment[1:48])
+
+dim(read)
+growth_data=data.frame(read[1:48,3:7])
+
+# get mean and standard deviation
+mean=aggregate(growth_data,by=list(treatment),FUN=mean,na.rm=T)
+mean=t(mean[,2:6])
+sd=aggregate(growth_data,by=list(treatment),FUN=sd,na.rm=T)
+sd=t(sd[,2:6])
+# set time
+time=c(0,2,3,4,5)
+
+{par(mfrow=c(2,4),
+     mar=c(2,2,1,1))
+
+  #RA5
+  errbar(time,mean[,9],yplus=mean[,9]+sd[,9],yminus=mean[,9]-sd[,9],
+         ylim=c(100,50000),log='y',type='b',col='navy', pch=21, bg='gray',errbar.col = 'navy',cex=1.3,
+         ylab=" ",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,10],yplus=mean[,10]+sd[,10],yminus=mean[,10]-sd[,10],col='navy', pch=21, bg='white',errbar.col = 'navy',cex=1.3,
+         type='b',add=T)
+  text(1,200,"RA5",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  axis(1, at=c(0:5),label=FALSE)
+  legend("bottomright", legend=c("xenic",'axenic'), pch=21, pt.bg=c('grey','white'), bty='n')
+
+  
+  #RD4
+  errbar(time,mean[,11],yplus=mean[,11]+sd[,11],yminus=mean[,11]-sd[,11],
+         ylim=c(100,50000),log='y',type='b',col='navy', pch=21, bg='gray',errbar.col = 'navy',cex=1.3,
+         ylab="Cell Abundance (cells/mL)",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,12],yplus=mean[,12]+sd[,12],yminus=mean[,12]-sd[,12],col='navy', pch=21,cex=1.3, bg='white',errbar.col = 'navy',
+         type='b',add=T)
+  text(1,200,"RD4",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+    axis(1, at=c(0:5),label=FALSE)
+
+
+
+  
+ 
+
+  
+  #YE5
+  errbar(time,mean[,15],yplus=mean[,15]+sd[,15],yminus=mean[,15]-sd[,15],col='firebrick', pch=21, bg='gray',errbar.col = 'firebrick',cex=1.3,
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,16],yplus=mean[,16]+sd[,16],yminus=mean[,16]-sd[,16],col='firebrick', pch=21, bg='white',errbar.col = 'firebrick',cex=1.3,
+         type='b',add=T)
+  text(1,200,"YE5", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+    axis(1, at=c(0:5),label=FALSE)
+    
+ 
+  
+  #NB7
+  errbar(time,mean[,5],yplus=mean[,5]+sd[,5],yminus=mean[,5]-sd[,5],col='forestgreen', pch=21, bg='gray',errbar.col = 'forestgreen',cex=1.3,
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab=" ",xaxt='n',
+         yaxt='n')
+  errbar(time,mean[,6],yplus=mean[,6]+sd[,6],yminus=mean[,6]-sd[,6],col='forestgreen', pch=21, bg='white',errbar.col = 'forestgreen',cex=1.3,
+         type='b',add=T)
+  text(1,200,"NB7", font=2)
+  axis(2,at=c(100,1000,12500,50000))
+      axis(1, at=c(0:5),label=FALSE)
+
+
+
+  
+  # RA4-RD4
+  errbar(time,mean_db[,1],yplus=mean_db[,1]+sd_db[,1],yminus=mean_db[,1]-sd_db[,1],col='black', pch=21, bg='gray',errbar.col = 'black',cex=1.3,
+         ylim=c(100,60000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab=" ",
+         yaxt='n')
+  text(1,200,"RD4 + RA4",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+      axis(1, at=c(0:5),label=FALSE)
+
+  
+  # RD4-NB7
+  errbar(time,mean_db[,2],yplus=mean_db[,2]+sd_db[,2],yminus=mean_db[,2]-sd_db[,2],col='black', pch=21, bg='gray',errbar.col = 'black',cex=1.3,
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  text(1,200,"RD4 + NB7",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+      axis(1, at=c(0:5),label=FALSE)
+
+  
+  # YD4_YE5
+  errbar(time,mean_db[,3],yplus=mean_db[,3]+sd_db[,3],yminus=mean_db[,3]-sd_db[,3],col='black', pch=21, bg='gray',errbar.col = 'black',cex=1.3,
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab=" ",
+         yaxt='n')
+  text(1,200,"RD4 + YE5",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+      axis(1, at=c(0:5),label=FALSE)
+
+}
+
+
+read
+clam=c("NB7_AX", "NB7", "RA5", "RA5_AX", "RD4", "RD4_AX", "YE5", "YE5_AX")
+ag=subset(read, treatment%in% clam)
+range(ag$X0)
+
+clam=c( "RA5_RD4", "RD4_NB7", "RD4_YE5")
+ag=subset(read, treatment%in% clam)
+range(ag$X0)
+range(ag$X5)
+
+
+clam2=c("NB7_AX", "NB7", "RA5", "RA5_AX", "RD4", "RD4_AX", "YE5", "YE5_AX")
+fast=subset(read, treatment %in% clam2)
+range(fast$X5, na.rm=T)
+
+range(fast$X0)
+
+
+
+```
+
+
+# Biomass at Harvest
+```{r}
+read=read.csv(file='rotula_cellcounts.csv',header=T,row.names=1)
+dim(read)
+treatment=as.factor(read$treatment[1:48])
+
+dim(read)
+growth_data=data.frame(read[1:48,3:7])
+
+nb4=read[1:6,7]
+a1=aov(nb4~treatment[1:6])
+TukeyHSD(a1) # p= 0.13
+
+nb6=read[7:12,7]
+a1=aov(nb6~treatment[7:12])
+TukeyHSD(a1) # p= 03 **
+boxplot(nb6~treatment[7:12],las=2)
+
+nb7=read[13:18,7]
+a1=aov(nb7~treatment[13:18])
+TukeyHSD(a1) # p= -.0034
+boxplot(nb7~treatment[13:18],las=2)
+
+
+ra4=read[19:24,7]
+a1=aov(ra4~treatment[19:24])
+a1
+TukeyHSD(a1) # p= 0.08
+boxplot(ra4~treatment[19:24],las=2)
+
+# ra5
+ra5=read[25:30,7]
+a1=aov(ra5~treatment[25:30])
+a1
+TukeyHSD(a1) # p= 0.12
+
+
+# rd4
+rd4=read[31:36,7]
+a1=aov(rd4~treatment[31:36])
+TukeyHSD(a1) # p= 0.42
+
+# yc5
+yc5=read[37:42,7]
+a1=aov(yc5~treatment[37:42])
+TukeyHSD(a1) # p= 0.77
+
+
+#ye5
+ye5=read[43:48,7]
+a1=aov(ye5~treatment[43:48])
+TukeyHSD(a1) # p= 0.17
+
+# nb7-22
+nb7_22=read[49:54,7]
+nb7_22x=c('nb7','nb7','nb7','nb7_ax','nb7_ax','nb7_ax')
+a1=aov(nb7_22~nb7_22x)
+TukeyHSD(a1) # p= 3.5e-5
+boxplot(nb7_22~nb7_22x)
+
+# rd4-22
+rd4_22=read[55:60,7]
+a1=aov(rd4_22~nb7_22x)
+TukeyHSD(a1) # p= 0.37
+
+
+```
+
+growth curves all for thesis 
+```{r}
+{par(mfrow=c(3,5),mar=c(5,4,1,1))
+  # NB4
+  errbar(time,mean[,1],yplus=mean[,1]+sd[,1],yminus=mean[,1]-sd[,1],
+         ylim=c(100,50000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,2],yplus=mean[,2]+sd[,2],yminus=mean[,2]-sd[,2],col='gray70',
+         type='b',add=T)
+  text(2,200,"NB4 18",font=2,cex=1.3)
+  axis(2,at=c(100,1000,10000,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  
+  #NB6
+  errbar(time,mean[,3],yplus=mean[,3]+sd[,3],yminus=mean[,3]-sd[,3],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,4],yplus=mean[,4]+sd[,4],yminus=mean[,4]-sd[,4],col='gray70',
+         type='b',add=T)
+  text(2,200,"NB6 18*", font=2,cex=1.3)
+  axis(2,at=c(100,1000,10000,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #NB7
+  errbar(time,mean[,5],yplus=mean[,5]+sd[,5],yminus=mean[,5]-sd[,5],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,6],yplus=mean[,6]+sd[,6],yminus=mean[,6]-sd[,6],col='gray70',
+         type='b',add=T)
+  text(2,200,"NB7 18**", font=2,cex=1.3)
+  axis(2,at=c(100,1000,10000,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #RA4
+  errbar(time,mean[,7],yplus=mean[,7]+sd[,7],yminus=mean[,7]-sd[,7],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,8],yplus=mean[,8]+sd[,8],yminus=mean[,8]-sd[,8],col='gray70',
+         type='b',add=T)
+  text(2,200,"RA4 18", font =2,cex=1.3)
+  axis(2,at=c(100,1000,10000,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #RA5
+  errbar(time,mean[,9],yplus=mean[,9]+sd[,9],yminus=mean[,9]-sd[,9],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,10],yplus=mean[,10]+sd[,10],yminus=mean[,10]-sd[,10],col='gray70',
+         type='b',add=T)
+  text(2,200,"RA5 18",font=2,cex=1.3)
+  axis(2,at=c(100,1000,10000,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #RD4
+  errbar(time,mean[,11],yplus=mean[,11]+sd[,11],yminus=mean[,11]-sd[,11],
+         ylim=c(100,50000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,12],yplus=mean[,12]+sd[,12],yminus=mean[,12]-sd[,12],col='gray70',
+         type='b',add=T)
+  text(2,200,"RD4 18",font=2,cex=1.3)
+  axis(2,at=c(100,1000,10000,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  #YC5
+  errbar(time,mean[,13],yplus=mean[,13]+sd[,13],yminus=mean[,13]-sd[,13],
+         ylim=c(10,10000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,14],yplus=mean[,14]+sd[,14],yminus=mean[,14]-sd[,14],col='gray70',
+         type='b',add=T)
+  text(2,20,"YC5 18",font=2,cex=1.3)
+  axis(2,at=c(10,100,1250,5000))
+  segments(0,1,0,60000,col='gray90',lty=2)
+  segments(2,1,2,60000,col='gray90',lty=2)
+  segments(3,1,3,60000,col='gray90',lty=2)
+  segments(4,1,4,60000,col='gray90',lty=2)
+  segments(5,1,5,60000,col='gray90',lty=2)
+  
+  #YE5
+  errbar(time,mean[,15],yplus=mean[,15]+sd[,15],yminus=mean[,15]-sd[,15],
+         ylim=c(100,50000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean[,16],yplus=mean[,16]+sd[,16],yminus=mean[,16]-sd[,16],col='gray70',
+         type='b',add=T)
+  text(2,200,"YE5 18", font=2,cex=1.3)
+  axis(2,at=c(100,1000,10000,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  plot.new()
+
+  # NB7 22
+  errbar(time,mean_22[,1],yplus=mean_22[,1]+sd_22[,1],yminus=mean_22[,1]-sd_22[,1],
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean_22[,2],yplus=mean_22[,2]+sd_22[,2],yminus=mean_22[,2]-sd_22[,2],
+         col='gray70',
+         type='b',add=T)
+  text(2,200,"NB7 22***",font=2,cex=1.3)
+  axis(2,at=c(100,1000,10000,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  # RD4 22
+  errbar(time,mean_22[,3],yplus=mean_22[,3]+sd_22[,3],yminus=mean_22[,3]-sd_22[,3],
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  errbar(time,mean_22[,4],yplus=mean_22[,4]+sd_22[,4],yminus=mean_22[,4]-sd_22[,4],
+         col='gray70',
+         type='b',add=T)
+  text(2,200,"RD4 22",font=2,cex=1.3)
+  axis(2,at=c(100,1000,10000,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  # RA4-RD4
+  errbar(time,mean_db[,1],yplus=mean_db[,1]+sd_db[,1],yminus=mean_db[,1]-sd_db[,1],
+         ylim=c(100,60000),log='y',type='b',
+         ylab="Cell Abundance (cells/mL)",
+         xlab="Time (days)",
+         yaxt='n')
+  text(2,200,"RD4 + RA4",font=2,cex=1.3)
+  axis(2,at=c(100,1000,10000,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  # RD4-NB7
+  errbar(time,mean_db[,2],yplus=mean_db[,2]+sd_db[,2],yminus=mean_db[,2]-sd_db[,2],
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  text(2,200,"RD4 + NB7",font=2,cex=1.3)
+  axis(2,at=c(100,1000,10000,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+  
+  # YD4_YE5
+  errbar(time,mean_db[,3],yplus=mean_db[,3]+sd_db[,3],yminus=mean_db[,3]-sd_db[,3],
+         ylim=c(100,60000),log='y',type='b',
+         ylab=" ",
+         xlab="Time (days)",
+         yaxt='n')
+  text(2,200,"RD4 + YE5",font=2,cex=1.3)
+  axis(2,at=c(100,1000,10000,50000))
+  segments(0,100,0,60000,col='gray90',lty=2)
+  segments(2,100,2,60000,col='gray90',lty=2)
+  segments(3,100,3,60000,col='gray90',lty=2)
+  segments(4,100,4,60000,col='gray90',lty=2)
+  segments(5,100,5,60000,col='gray90',lty=2)
+}
+```
+
+
+# bacteria
+
+```{r}
+read=read.csv(file="/Users/ahern/Desktop/bact_growth.csv",header=T,row.names=1)
+
+dim(read)
+
+range(read$X5.00[8:43],na.rm=T)
+diatoms=read$X5.00[8:43]
+range(read$X0.00,na.rm=T)
+mean(read$X0.00,na.rm=T)
+sd(read$X0.00,na.rm=T)
+
+diatoms=read$X5.00[8:46]
+mean(diatoms,na.rm=T) # 976944.7
+sd(diatoms,na.rm=T) # 1303581
+
+ye5=read$X5.00[44:46]
+mean(618605.0, 218731.7,530102.4)
+s=c(618605.0, 218731.7,530102.4)
+sd(s) # 618,605 +/- 210,033
+
+
+bact=read$X5.00[1:7]
+mean(bact)
+sd(bact) # 382507.6 +/- 87,390.54
+
+data=data.frame(read[,3:7])
+plot(data[1,])
+treatment=read$treat
+mean1=aggregate(data,by=list(treatment),FUN=mean,na.rm=T)
+mean=t(mean1[,2:6])
+sd1=aggregate(data,by=list(treatment),FUN=sd,na.rm=T)
+sd=t(sd1[,2:6])
+# set time
+time=c(0,2,3,4,5)
+
+range(data,na.rm=T)
+
+library(Hmisc)
+sd=t(sd1[,2:6])
+
+par(mfrow=c(2,2),mar=c(5,5,1,1))
+  # Bact
+  
+  # NB
+  errbar(time,mean[,1],yplus=mean[,1]+sd[,1],yminus=mean[,1]-sd[,1],
+         type='b',ylim=c(1,4500), log='y',cex=1.5,
+         ylab="Bacteria:Diatom ratio", pch=21, bg='forestgreen',
+         xlab="Time (days)",cex.lab=1.2) 
+  errbar(time,mean[,2],yplus=mean[,2]+sd[,2],yminus=mean[,2]-sd[,2],bg='forestgreen', pch =22,cex=1.5,
+         type='b',add=T)
+  errbar(time,mean[,3],yplus=mean[,3]+sd[,3],yminus=mean[,3]-sd[,3],bg='forestgreen', pch=23,cex=1.5,
+         type='b',add=T)
+  errbar(time,mean[,4],yplus=mean[,4]+sd[,4],yminus=mean[,4]-sd[,4],bg='green', pch=24,cex=1.5,
+         type='b',add=T)
+  legend('bottomleft',legend=c('NB4','NB6','NB7','NB7-22'), 
+         pt.bg =c('forestgreen','forestgreen','forestgreen','green'),
+         pch=c(21,22,23,24),bty='n')
+  #text(4,200,"NB4")
+  
+  #
+  # R
+  errbar(time,mean[,5],yplus=mean[,5]+sd[,5],yminus=mean[,5]-sd[,5],
+         log='y',type='b',ylim=c(1,4500), pch = 21, bg='navy',
+         ylab="Bacteria:Diatom Ratio", cex.lab=1.2,cex=1.5,
+         xlab="Time (days)")
+  errbar(time,mean[,6],yplus=mean[,6]+sd[,6],yminus=mean[,6]-sd[,6],bg='navy', pch =22,cex=1.5,
+         type='b',add=T)
+  errbar(time,mean[,8],yplus=mean[,8]+sd[,8],yminus=mean[,8]-sd[,8],bg='navy', pch =23,cex=1.5,
+         type='b',add=T)
+  errbar(time,mean[,9],yplus=mean[,9]+sd[,9],yminus=mean[,9]-sd[,9],bg='blue', pch=24,cex=1.5,
+         type='b',add=T)
+  legend('bottomleft',legend=c('RA4','RA5','RD4','RD4-22'), 
+         pt.bg =c('navy','navy','navy','blue'),
+         pch=c(21,22,23,24),bty='n')
+ # text(4,200,"NB4")
+  
+  # R
+  errbar(time,mean[,12],yplus=mean[,12]+sd[,12],yminus=mean[,12]-sd[,12],
+         log='y',type='b',ylim=c(1,50000), pch =21, bg='firebrick',
+         ylab="Bacteria:Diatom Ratio", cex.lab=1.2,cex=1.5,
+         xlab="Time (days)")
+  errbar(time,mean[,13],yplus=mean[,13]+sd[,13],yminus=mean[,13]-sd[,13],bg='firebrick', pch = 22,cex=1.5,
+         type='b',add=T)
+  legend('bottomleft',legend=c('YC5','YE5'), 
+         pt.bg =c('firebrick','firebrick'),
+         pch=c(21,22),bty='n')
+  
+  # R
+  errbar(time,mean[,7],yplus=mean[,7]+sd[,7],yminus=mean[,7]-sd[,7],
+         log='y',type='b',ylim=c(1,4500), pch =24,cex=1.5,
+         ylab="Diatom:Bacteria Ratio", bg= 'blue', cex.lab=1.2,
+         xlab="Time (days)")
+  errbar(time,mean[,10],yplus=mean[,10]+sd[,10],yminus=mean[,10]-sd[10],bg='green', pch = 24,cex=1.5,
+         type='b',add=T)
+  errbar(time,mean[,11],yplus=mean[,11]+sd[,11],yminus=mean[,11]-sd[11],bg='orange', pch = 24,cex=1.5,
+         type='b',add=T)
+  legend('bottomleft',legend=c('RD4 + RA5','RD4 + NB7', 'RD4 + YE5'), 
+         pt.bg =c('blue','green','orange'),
+         pch=24,bty='n')
+  
+dev.off()
+  read$gen_time1
+  
+
+  
+  
+  ## try diatom bacteria ratio 
+  ###
+  read=read.csv(file='/Users/ahern/R/CHP_3/diatom_bacteria_ratio.csv',header=T,row.names=1)
+  data=data.frame(read[,3:7])
+  plot(data[1,])
+  treatment=read$treat
+  mean1=aggregate(data,by=list(treatment),FUN=mean,na.rm=T)
+  mean=t(mean1[,2:6])
+  sd1=aggregate(data,by=list(treatment),FUN=sd,na.rm=T)
+  sd=t(sd1[,2:6])
+  # set time
+  time=c(0,2,3,4,5)
+  
+  time=c(0,2,3,4,5)
+  
+  library(Hmisc)
+  
+  par(mfrow=c(2,3),mar=c(5,5,1,1))
+  # Bact
+  errbar(time,mean[,1],yplus=mean[,1]+sd[,1],yminus=mean[,1]-sd[,1],
+         log='y',type='b',ylim=c(119908.6,7787004.6),
+         ylab="Cell Abundance (cells/mL)",
+         xlab="Time (days)")
+  errbar(time,mean[,2],yplus=mean[,2]+sd[,2],yminus=mean[,2]-sd[,2],col='gray70',
+         type='b',add=T)
+  text(1,5000000,"Bact 18C")
+  text(1,4000000,"Bact 22C",col='gray70')
+  
+  # NB
+  errbar(time,mean[,3],yplus=mean[,3]+sd[,3],yminus=mean[,3]-sd[,3],
+         log='y',type='b',ylim=c(119908.6,7787004.6),
+         ylab="Cell Abundance (cells/mL)", pch=21, bg='forestgreen',
+         xlab="Time (days)") 
+  errbar(time,mean[,4],yplus=mean[,4]+sd[,4],yminus=mean[,4]-sd[,4],bg='forestgreen', pch =22,
+         type='b',add=T)
+  errbar(time,mean[,5],yplus=mean[,5]+sd[,5],yminus=mean[,5]-sd[,5],bg='forestgreen', pch=23,
+         type='b',add=T)
+  errbar(time,mean[,6],yplus=mean[,6]+sd[,6],yminus=mean[,6]-sd[,6],bg='green', pch=24,
+         type='b',add=T)
+  legend('topleft',legend=c('NB4','NB6','NB7','NB7-22'), 
+         pt.bg =c('forestgreen','forestgreen','forestgreen','green'),
+         pch=c(21,22,23,24),bty='n')
+  text(4,200,"NB4")
+  
+  
+  # R
+  errbar(time,mean[,7],yplus=mean[,7]+sd[,7],yminus=mean[,7]-sd[,7],
+         log='y',type='b',ylim=c(119908.6,7787004.6), pch = 21, bg='navy',
+         ylab="Cell Abundance (cells/mL)",
+         xlab="Time (days)")
+  errbar(time,mean[,9],yplus=mean[,9]+sd[,9],yminus=mean[,9]-sd[,9],bg='navy', pch =22,
+         type='b',add=T)
+  errbar(time,mean[,10],yplus=mean[,10]+sd[,10],yminus=mean[,10]-sd[,10],bg='navy', pch =23,
+         type='b',add=T)
+  errbar(time,mean[,11],yplus=mean[,11]+sd[,11],yminus=mean[,11]-sd[,11],bg='blue', pch=24,
+         type='b',add=T)
+  legend('topleft',legend=c('RA4','RA5','RD4','RD4-22'), 
+         pt.bg =c('navy','navy','navy','blue'),
+         pch=c(21,22,23,24),bty='n')
+  text(4,200,"NB4")
+  
+  # R
+  errbar(time,mean[,14],yplus=mean[,14]+sd[,14],yminus=mean[,14]-sd[,14],
+         log='y',type='b',ylim=c(119908.6,7787004.6), pch =21, bg='firebrick',
+         ylab="Cell Abundance (cells/mL)",
+         xlab="Time (days)")
+  errbar(time,mean[,15],yplus=mean[,15]+sd[,15],yminus=mean[,15]-sd[,15],bg='firebrick', pch = 22,
+         type='b',add=T)
+  legend('topleft',legend=c('YC5','YE5'), 
+         pt.bg =c('firebrick','firebrick'),
+         pch=c(21,22),bty='n')
+  
+  # R
+  errbar(time,mean[,8],yplus=mean[,8]+sd[,8],yminus=mean[,8]-sd[,8],
+         log='y',type='b',ylim=c(119908.6,7787004.6), pch =24,
+         ylab="Cell Abundance (cells/mL)", bg= 'blue',
+         xlab="Time (days)")
+  errbar(time,mean[,12],yplus=mean[,12]+sd[,12],yminus=mean[,12]-sd[12],bg='green', pch = 24,
+         type='b',add=T)
+  errbar(time,mean[,13],yplus=mean[,13]+sd[,13],yminus=mean[,13]-sd[13],bg='orange', pch = 24,
+         type='b',add=T)
+  legend('topleft',legend=c('RD4 + RA5','RD4 + NB7', 'RD4 + YE5'), 
+         pt.bg =c('blue','green','orange'),
+         pch=24,bty='n')
+
+  ## try with just average bacteria
+read=read.csv(file="/Users/ahern/Desktop/bact_growth2.csv",header=T,row.names=1)
+  
+id=read$X
+data=data.frame(read[,3:7])
+
+  mean1=aggregate(data,by=list(id),FUN=mean,na.rm=T)
+  mean=t(mean1[,2:6])
+  sd1=aggregate(data,by=list(id),FUN=sd,na.rm=T)
+  sd=t(sd1[2:6])
+  # set time
+  time=c(0,2,3,4,5)
+  par(mfrow=c(1,2),mar=c(5,5,1,1))
+  # Bact
+errbar(time,mean[,1],yplus=mean[,1]+sd[,1],yminus=mean[,1]-sd[,1],
+         log='y',type='b',ylim=c(103359.5,1682134.1),
+         ylab="Cell Abundance (cells/mL)",
+         xlab="Time (days)")
+errbar(time,mean[,2],yplus=mean[,2]+sd[,2],yminus=mean[,2]-sd[,2],col='gray70',
+         type='b',add=T)
+
+
+read=read.csv(file="/Users/ahern/Desktop/bact_growth2.csv",header=T,row.names=1)
+
+id=read$X
+treatment=read$treat
+data=data.frame(read[,3:7])
+
+mean1=aggregate(data,by=list(treatment),FUN=mean,na.rm=T)
+mean=t(mean1[,2:6])
+sd1=aggregate(data,by=list(treatment),FUN=sd,na.rm=T)
+sd=t(sd1[2:6])
+# set time
+time=c(0,2,3,4,5)
+par(mfrow=c(1,2),mar=c(5,5,1,1))
+# Bact
+errbar(time,mean[,1],yplus=mean[,1]+sd[,1],yminus=mean[,1]-sd[,1],
+       log='y',type='b',ylim=c(103359.5,1182134.1),
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,2],yplus=mean[,2]+sd[,2],yminus=mean[,2]-sd[,2],col='gray70',
+       type='b',add=T)
+
+
+
+# NB
+errbar(time,mean[,3],yplus=mean[,3]+sd[,3],yminus=mean[,3]-sd[,3],
+       log='y',type='b',ylim=c(119908.6,7787004.6),
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,4],yplus=mean[,4]+sd[,4],yminus=mean[,4]-sd[,4],col='gray70',
+       type='b',add=T)
+errbar(time,mean[,5],yplus=mean[,5]+sd[,5],yminus=mean[,5]-sd[,5],col='gray40',
+       type='b',add=T)
+errbar(time,mean[,6],yplus=mean[,6]+sd[,6],yminus=mean[,6]-sd[,6],col='gray40',
+       type='b',add=T)
+text(4,200,"NB4")
+
+
+# R
+errbar(time,mean[,7],yplus=mean[,7]+sd[,7],yminus=mean[,7]-sd[,7],
+       log='y',type='b',ylim=c(119908.6,7787004.6),
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,9],yplus=mean[,9]+sd[,9],yminus=mean[,9]-sd[,9],col='gray70',
+       type='b',add=T)
+errbar(time,mean[,10],yplus=mean[,10]+sd[,10],yminus=mean[,10]-sd[,10],col='gray40',
+       type='b',add=T)
+errbar(time,mean[,11],yplus=mean[,11]+sd[,11],yminus=mean[,11]-sd[,11],col='gray40',
+       type='b',add=T)
+text(4,200,"NB4")
+
+# R
+errbar(time,mean[,14],yplus=mean[,14]+sd[,14],yminus=mean[,14]-sd[,14],
+       log='y',type='b',ylim=c(119908.6,7787004.6),
+       ylab="Cell Abundance (cells/mL)",
+       xlab="Time (days)")
+errbar(time,mean[,15],yplus=mean[,15]+sd[,15],yminus=mean[,15]-sd[,15],col='gray70',
+       type='b',add=T)
+
+
+
+  
+  
+  
+  
+
+read=read.csv(file="/Users/ahern/Desktop/bact_gen.csv",header=T,row.names=1)
+boxplot(read$gen_time1~read$treat,las=2)
+treat=read$treat]
+# bact diff?
+bact=read$gen_time1[1:7]
+a1=aov(read$gen_time1~read$x)
+TukeyHSD(a1) # p= 0.0841159
+boxplot(read$gen_time1~read$x)
+
+# pops diff?
+bact=read$gen_time1[8:37]
+a1=aov(bact~pop[8:37])
+summary(a1)
+TukeyHSD(a1) # p= 0.5844931
+
+
+# treat diff?
+bact=read$gen_time1[8:37]
+a1=aov(bact~treat[8:37])
+summary(a1)
+TukeyHSD(a1) # p= 0.5844931
+
+boxplot(read$gen_2~read$treat)
+
+# bact diff?
+bact=read$gen_2[1:7]
+a1=aov(read$gen_2~read$x)
+TukeyHSD(a1) # p= 0.0841159
+# pops diff?
+bact=read$gen_2[8:37]
+a1=aov(bact~pop[8:37])
+TukeyHSD(a1) # p= 0.5844931
+boxplot(bact~pop[8:37])
+# treat diff?
+bact=read$gen_2[8:37]
+a1=aov(bact~treat[8:37])
+TukeyHSD(a1) # p= 0.5844931
+boxplot(bact~treat[8:37])
+
+
+
+
+
+read=read.csv("/Users/ahern/Desktop/cg_certain_lefse.csv",header=T,row.names=1)
+dim(read)
+read=read.csv("/Users/ahern/Desktop/bact_by_lef.csv",header=T,row.names=1)
+
+
+abund=((read/58270)*100)
+colors=RColorBrewer::brewer.pal(8,'Spectral')
+
+# par(mar=c(5,8,3,1),xpd=T,mfrow=c(2,1))
+barplot(as.matrix(abund),ylim=c(0,40),names=rep("",81),space=0,border=NA,col=colors,
+        ylab='Bacterial Class \nRelative Abundance',cex.lab=1,las=2,xlim=c(0,81))
+
+barplot(as.matrix(abund[1:2,]),space=0,border=NA,col=colors,names=rep("",30),
+        ylab='Bacterial Class \nRelative Abundance',cex.lab=1,las=2,xlim=c(0,30))
+
+
+
+par(mar=c(20,10,10,1),xpd=T)
+barplot(as.matrix(abund[1:3,]),las=2,space=0,border=NA,col=colors,
+        ylab='Bacterial Family \nRelative Abundance',cex.lab=1.3,ylim=c(0,40))
+box(which='plot')
+segments(0,103,1.75,103,lwd=2)
+text(.75,110,"T0-B",srt=0)
+# T5s
+segments(2,0,2,6,lwd=2,col='black')
+segments(2.25,7,5.75,7,col='gray50',lwd=2)
+text(4,110,"T5-B",srt=0)
+# marches
+segments(6,0,6,100,lwd=2,col='white')
+segments(9,0,9,100,col='white')
+segments(12,0,12,100,col='white')
+segments(15,0,15,100,lwd=2,col='white')
+segments(6.25,103,14.75,103,col='navy',lwd=2)
+text(10.5,110,"CG1")
+# mays
+segments(18,0,18,100,col='white')
+segments(21,0,21,100,lwd=2,col='white')
+segments(15.25,103,20.75,103,col='firebrick',lwd=2)
+text(18,110,"CG2")
+# November
+segments(24,0,24,100,lwd=1,col='white')
+segments(27,0,27,100,col='white')
+segments(30,0,30,100,lwd=2,col='white')
+segments(21.25,103,30,103,col='forestgreen',lwd=2)
+text(25.5,110,"CG3")
+
+
+
+par(mar=c(20,10,10,1),xpd=T)
+barplot(as.matrix(abund[3:8,]),las=2,space=0,border=NA,col=colors,
+        ylab='Bacterial Family \nRelative Abundance',cex.lab=1.3,ylim=c(0,40))
+box(which='plot')
+segments(0,103,1.75,103,lwd=2)
+text(.75,110,"T0-B",srt=0)
+# T5s
+segments(2,0,2,6,lwd=2,col='black')
+segments(2.25,7,5.75,7,col='gray50',lwd=2)
+text(4,110,"T5-B",srt=0)
+# marches
+segments(6,0,6,100,lwd=2,col='white')
+segments(9,0,9,100,col='white')
+segments(12,0,12,100,col='white')
+segments(15,0,15,100,lwd=2,col='white')
+segments(6.25,103,14.75,103,col='navy',lwd=2)
+text(10.5,110,"CG1")
+# mays
+segments(18,0,18,100,col='white')
+segments(21,0,21,100,lwd=2,col='white')
+segments(15.25,103,20.75,103,col='firebrick',lwd=2)
+text(18,110,"CG2")
+# November
+segments(24,0,24,100,lwd=1,col='white')
+segments(27,0,27,100,col='white')
+segments(30,0,30,100,lwd=2,col='white')
+segments(21.25,103,30,103,col='forestgreen',lwd=2)
+text(25.5,110,"CG3")
+
+
+colors=RColorBrewer::brewer.pal(12,'Set3')
+
+par(mar=c(5,5,5,1),mfrow=c(2,2),xpd=T)
+barplot(as.matrix(abund[1:3,]),las=2,space=0,border=NA,col=colors,
+        ylab='Bacterial OTU Relative Abundance',cex.lab=1.3,ylim=c(0,10))
+{box(which='plot')
+segments(0,101,1.75,101,lwd=2)
+text(.75,105,"T0-B",srt=0,cex=2)
+# T5s
+segments(2,0,2,100,lwd=2,col='black')
+segments(2.25,101,5.75,101,col='gray50',lwd=2)
+text(4,105,"T5-B",srt=0,cex=2)
+# marches
+segments(6,0,6,100,lwd=2,col='black')
+segments(9,0,9,100,col='gray50')
+segments(12,0,12,100,col='gray50')
+segments(15,0,15,100,lwd=2,col='gray50')
+segments(6.25,101,14.75,101,col='navy',lwd=2)
+text(10.5,105,"CG1",cex=2)
+# mays
+segments(18,0,18,100,col='gray50')
+segments(21,0,21,100,lwd=2,col='black')
+segments(15.25,101,20.75,101,col='firebrick',lwd=2)
+text(18,105,"CG2",cex=2)
+# November
+segments(24,0,24,100,lwd=1,col='gray50')
+segments(27,0,27,100,col='gray50')
+segments(30,0,30,100,lwd=2,col='gray50')
+segments(21.25,101,30,101,col='forestgreen',lwd=2)
+text(25.5,105,"CG3",cex=2)}
+# Bact
+barplot(as.matrix(abund[4:6,]),las=2,space=0,border=NA,col=colors[4:6],
+        ylab='Bacterial Family \nRelative Abundance',cex.lab=1.3,ylim=c(0,10))
+{box(which='plot')
+  segments(0,101,1.75,101,lwd=2)
+  text(.75,105,"T0-B",srt=0,cex=2)
+  # T5s
+  segments(2,0,2,100,lwd=2,col='black')
+  segments(2.25,101,5.75,101,col='gray50',lwd=2)
+  text(4,105,"T5-B",srt=0,cex=2)
+  # marches
+  segments(6,0,6,100,lwd=2,col='black')
+  segments(9,0,9,100,col='gray50')
+  segments(12,0,12,100,col='gray50')
+  segments(15,0,15,100,lwd=2,col='gray50')
+  segments(6.25,101,14.75,101,col='navy',lwd=2)
+  text(10.5,105,"CG1",cex=2)
+  # mays
+  segments(18,0,18,100,col='gray50')
+  segments(21,0,21,100,lwd=2,col='black')
+  segments(15.25,101,20.75,101,col='firebrick',lwd=2)
+  text(18,105,"CG2",cex=2)
+  # November
+  segments(24,0,24,100,lwd=1,col='gray50')
+  segments(27,0,27,100,col='gray50')
+  segments(30,0,30,100,lwd=2,col='gray50')
+  segments(21.25,101,30,101,col='forestgreen',lwd=2)
+  text(25.5,105,"CG3",cex=2)}
+barplot(as.matrix(abund[7:9,]),las=2,space=0,border=NA,col=colors[7:9],
+        ylab='Bacterial Family \nRelative Abundance',cex.lab=1.3,ylim=c(0,10))
+{box(which='plot')
+  segments(0,101,1.75,101,lwd=2)
+  text(.75,105,"T0-B",srt=0,cex=2)
+  # T5s
+  segments(2,0,2,100,lwd=2,col='black')
+  segments(2.25,101,5.75,101,col='gray50',lwd=2)
+  text(4,105,"T5-B",srt=0,cex=2)
+  # marches
+  segments(6,0,6,100,lwd=2,col='black')
+  segments(9,0,9,100,col='gray50')
+  segments(12,0,12,100,col='gray50')
+  segments(15,0,15,100,lwd=2,col='gray50')
+  segments(6.25,101,14.75,101,col='navy',lwd=2)
+  text(10.5,105,"CG1",cex=2)
+  # mays
+  segments(18,0,18,100,col='gray50')
+  segments(21,0,21,100,lwd=2,col='black')
+  segments(15.25,101,20.75,101,col='firebrick',lwd=2)
+  text(18,105,"CG2",cex=2)
+  # November
+  segments(24,0,24,100,lwd=1,col='gray50')
+  segments(27,0,27,100,col='gray50')
+  segments(30,0,30,100,lwd=2,col='gray50')
+  segments(21.25,101,30,101,col='forestgreen',lwd=2)
+  text(25.5,105,"CG3",cex=2)}
+barplot(as.matrix(abund[13:15,]),las=2,space=0,border=NA,col=colors[10:12],
+        ylab='Bacterial Family \nRelative Abundance',cex.lab=1.3,ylim=c(0,10))
+{box(which='plot')
+  segments(0,101,1.75,101,lwd=2)
+  text(.75,105,"T0-B",srt=0,cex=2)
+  # T5s
+  segments(2,0,2,100,lwd=2,col='black')
+  segments(2.25,101,5.75,101,col='gray50',lwd=2)
+  text(4,105,"T5-B",srt=0,cex=2)
+  # marches
+  segments(6,0,6,100,lwd=2,col='black')
+  segments(9,0,9,100,col='gray50')
+  segments(12,0,12,100,col='gray50')
+  segments(15,0,15,100,lwd=2,col='gray50')
+  segments(6.25,101,14.75,101,col='navy',lwd=2)
+  text(10.5,105,"CG1",cex=2)
+  # mays
+  segments(18,0,18,100,col='gray50')
+  segments(21,0,21,100,lwd=2,col='black')
+  segments(15.25,101,20.75,101,col='firebrick',lwd=2)
+  text(18,105,"CG2",cex=2)
+  # November
+  segments(24,0,24,100,lwd=1,col='gray50')
+  segments(27,0,27,100,col='gray50')
+  segments(30,0,30,100,lwd=2,col='gray50')
+  segments(21.25,101,30,101,col='forestgreen',lwd=2)
+  text(25.5,105,"CG3",cex=2)}
+
+
+
+```
+
+
+
+# Growth Rates
+
+## Axenics vs Xenics
+I found exponential growth was between days 1-3 for most cultures 
+Only YE5 was significantly different than its counterpart p = 0.0124109
+```{r}
+# info for just the 18 Degree Single Cultures 
+###
+
+read=read.csv(file='TR_Growth_rates_21Apr20.csv',header=T,row.names=1)
+growth_all=read$growth_rate 
+treatment_all=read$treatment
+
+
+
+# nb4 
+nb4=growth_all[1:6]
+a1=aov(nb4~treatment_all[1:6])
+TukeyHSD(a1) # p= 0.6236896
+
+# nb6
+nb6=growth_all[7:12]
+a1=aov(nb4~treatment_all[7:12])
+a1
+TukeyHSD(a1) # p= 0.6236896
+
+# nb7 
+nb7=growth_all[13:18]
+a1=aov(nb7~treatment_all[13:18])
+a1
+TukeyHSD(a1) # p= 0.7671193
+
+# ra4
+ra4=growth_all[19:24]
+a1=aov(ra4~treatment_all[19:24])
+a1
+TukeyHSD(a1) # p= 0.560293
+
+# ra5
+ra5=growth_all[25:30]
+a1=aov(ra5~treatment_all[25:30])
+a1
+TukeyHSD(a1) # p= 0.0300599
+## should do 4 day for this one
+ra5_data=read[25:30,3:7]
+ra5_growth=(log(ra5_data[,4])-log(ra5_data[,1]))/4
+a1=aov(ra5_growth~treatment_all[25:30])
+TukeyHSD(a1) # p= 0.6596597
+
+# rd4
+rd4=growth_all[31:36]
+a1=aov(rd4~treatment_all[31:36])
+TukeyHSD(a1) # p= 0.1739155
+
+# yc5
+yc5=growth_all[37:42]
+a1=aov(yc5~treatment_all[37:42])
+TukeyHSD(a1) # p= 0.5844931
+## should do 2 - 5 
+yc5_data=read[37:42,3:7]
+yc5_growth=(log(yc5_data[,5])-log(yc5_data[,2]))/3
+a1=aov(yc5_growth~treatment_all[37:42])
+TukeyHSD(a1) # p= 0.8826661
+
+#ye5
+ye5=growth_all[43:48]
+a1=aov(ye5~treatment_all[43:48])
+TukeyHSD(a1) # p= 0.0124109
+
+# nb7-22
+nb7_22=growth_all[49:54]
+a1=aov(nb7_22~treatment_all[49:54])
+TukeyHSD(a1) # p= 0.3467382
+
+# rd4-22
+rd4_22=growth_all[55:60]
+a1=aov(rd4_22~treatment_all[55:60])
+TukeyHSD(a1) # p= 0.8388943
+
+
+
+
+
+## nb7-22
+nb7_x=growth_all[13:15]
+nb7_x_22=growth_all[49:51]
+mat=c(nb7_x,nb7_x_22)
+nb7=as.factor(c("nb7_18","nb7_18","nb7_18","nb7_22","nb7_22","nb7_22"))
+a1=aov(mat~nb7)
+a1
+TukeyHSD(a1) # p= 0.7671193
+
+## nb7-22ax
+nb7_x=growth_all[16:18]
+nb7_x_22=growth_all[52:54]
+mat=c(nb7_x,nb7_x_22)
+nb7=as.factor(c("nb7_18","nb7_18","nb7_18","nb7_22","nb7_22","nb7_22"))
+a1=aov(mat~nb7)
+a1
+TukeyHSD(a1) # p= 0.7671193
+
+# rd4
+nb7_x=growth_all[31:33]
+nb7_x_22=growth_all[55:57]
+mat=c(nb7_x,nb7_x_22)
+nb7=as.factor(c("nb7_18","nb7_18","nb7_18","nb7_22","nb7_22","nb7_22"))
+a1=aov(mat~nb7)
+a1
+TukeyHSD(a1) # p= 0.7671193
+
+# rd4
+nb7_x=growth_all[34:36]
+nb7_x_22=growth_all[58:60]
+mat=c(nb7_x,nb7_x_22)
+nb7=as.factor(c("nb7_18","nb7_18","nb7_18","nb7_22","nb7_22","nb7_22"))
+a1=aov(mat~nb7)
+a1
+TukeyHSD(a1) # p= 0.7671193
+
+
+```
+
+## Growth Rates Means
+Growth Rate Means with axenic counterpart after. Bars represent standard deviations from the mean 
+```{r}
+read=read.csv(file='TR_Growth_rates_21Apr20.csv',header=T,row.names=1)
+
+mean_growth=aggregate(read$growth_rate,by=list(read$treat_num),FUN=mean,na.rm=T)
+names=mean_growth[,1]
+mean_growth=mean_growth[,2]
+sd_growth=aggregate(read$growth_rate,by=list(read$treat_num),FUN=sd,na.rm=T)
+sd_growth=sd_growth[,2]
+
+names=c("NB4","NB4_AX","NB6","NB6_AX","NB7","NB7_AX",
+        "RA4","RA4_AX","RA5","RA5_AX","RD4","RD4_AX","YC5","YC5_AX","YE5","YE5_AX","NB7_22","NB7_AX-22","RD4_22","RD4_AX-22","RA5_RD4","RD4_NB7","RD4_YE5")
+color=c("forestgreen","forestgreen","forestgreen","forestgreen","forestgreen","forestgreen","navy","navy","navy","navy","navy","navy","firebrick","firebrick","firebrick","firebrick","green","green","blue","blue","gray70","gray70","gray70")
+pch=c("21","21","22","22","23","23",
+      "21","21","22","22","23","23","21","21","22","22","24","24","24","24","25","25","25")
+alpha1=c("1","0.7","1","0.7","1","0.7","1","0.7","1","0.7","1","0.7","1","0.7","1","0.7","1","0.7","1","0.7","1","1","1")
+{errbar(1:23,mean_growth,
+       yplus=mean_growth+sd_growth,
+       yminus=mean_growth-sd_growth,
+       ylab="Growth Rate (doubling/day)",
+       xaxt='n',
+       xlab='',
+       pch=as.numeric(pch),
+       bg=alpha(color,0.5),cex=1.5)
+mtext(names,side=1,at=c(1:23),las=2,adj=1.1)
+segments(15,1.15,16,1.15,lwd=1)
+text(15.5,1.17,"*",cex=1.5)
+}
+
+
+
+
+
+
+```
+
+
+
+```{r}
+read=read.csv(file='TR_Growth_rates_21Apr202.csv',header=T,row.names=1)
+
+mean_growth=aggregate(read$growth_rate,by=list(read$treat_num),FUN=mean,na.rm=T)
+names=mean_growth[,1]
+mean_growth=mean_growth[,2]
+# mean_growth1=mean_growth[1:16]
+sd_growth=aggregate(read$growth_rate,by=list(read$treat_num),FUN=sd,na.rm=T)
+sd_growth=sd_growth[,2]
+# sd_growth1=sd_growth[1:16]
+
+names1=c("NB4","NB4_AX","NB6","NB6_AX","NB7","NB7_AX","RA4","RA4_AX","RA5","RA5_AX","RD4","RD4_AX","YC5","YC5_AX","YE5","YE5_AX")
+color=c("forestgreen","forestgreen","forestgreen","forestgreen","forestgreen","forestgreen","navy","navy","navy","navy","navy","navy","firebrick","firebrick","firebrick","firebrick")
+pch=c("21","21","22","22","23","23","21","21","22","22","23","23","21","21","22","22","24")
+alpha1=c("1","0.7","1","0.7","1","0.7","1","0.7","1","0.7","1","0.7","1","0.7","1","0.7")
+{
+  errbar(names1,mean_growth,
+       yplus=mean_growth+sd_growth,
+       yminus=mean_growth-sd_growth,
+       ylab="Growth Rate",
+       add=T
+       xaxt='n',
+       #  ylab='',
+       pch=as.numeric(pch),
+       bg=alpha(color,0.7),cex=1.4)
+ # mtext(names1,side=1,at=c(1:16),las=2,adj=1.1)
+ #  box(which='plot')
+      }
+
+
+```
+
+## Including Plots
+# General Sample Information
+```{r,echo=F,message=F}
+## Chapter 3 97% OTUs
+setwd("/Users/oliviaahern/Documents/PhD/Chapter2/CHP_3/Full_Paper/21Apr20/")
+## vst transformation 
+library(DESeq2)
+library(phyloseq)
+library(ape)
+library(vegan)
+library(GenomicRanges)
+library(CoDaSeq)
+# library(zCompositions)
+# library(compositions)
+```
+## data
+```{r}
+x<-read.csv(file='/Users/oliviaahern/Documents/PhD/Chapter2/CHP_3/Full_Paper/21Apr20/OTU_Tab_over5.csv',header=TRUE,row.names=1)
+dim(x)
+gloor_tab=x
+OTU = otu_table(x, taxa_are_rows=T)
+taxa<-read.csv(file="/Users/oliviaahern/Documents/PhD/Chapter2/CHP_3/Full_Paper/21Apr20/OTU_Taxa.csv",header=TRUE,row.names=1)
+t<-as.matrix(taxa)
+tax2<-tax_table(t)
+tree=read.tree('/Users/oliviaahern/Documents/PhD/Chapter2/CHP_3/Full_Paper/21Apr20/otus_tree_21apr20.tre')
+map<-import_qiime_sample_data("/Users/oliviaahern/Documents/R/PhD/Chp2/21Apr20/info2.txt")
+# map<-import_qiime_sample_data("/Users/oliviaahern/Documents/R/PhD/Chp2/21Apr20/info2.txt")
+map<-import_qiime_sample_data("/Users/oliviaahern/Documents/R/PhD/Chp2/21Apr20/cg_map_10jan25.txt")
+
+cg = phyloseq(OTU, map,tax2,tree)
+cg_filt=subset_samples(cg, keep_2026 =='yes')
+
+cg
+phyo1 = subset_taxa(cg_filt, !phyla=="Cyanobacteria/Chloroplast")
+cg=phyo1
+is.rooted(phy_tree(cg))
+
+cg_filt=subset_samples(cg, keep_2026 =='yes')
+
+```
+
+
+https://github.com/zdk123/SpiecEasi
+
+## venn diagrams
+
+### nb7
+```{r}
+sample_data(cg)$Treatment
+
+nb7=subset_samples(cg, Treatment=="NB7" | Treatment=="NB7_Blank")
+sample_data(nb7)
+
+agg=tax_glom(nb7, taxrank="species")
+library(grid)
+library(VennDiagram)
+
+spec1=specnumber(t(otu_table(subset_samples(agg, Treatment_Multi=="NB7_Filter"))))
+nb7 = merge_samples((agg), "Treatment_Multi")
+Bacterioplankton <- prune_samples("NB7_Blank_WGA", nb7)
+Bacterioplankton <- filter_taxa(Bacterioplankton, function(x) sum(x) > 1, prune = TRUE)
+Bacterioplankton=colnames((otu_table(Bacterioplankton)))
+Bacterioplankton
+Assemblage <- prune_samples("NB7_Filter", nb7)
+Assemblage <- filter_taxa(Assemblage, function(x) sum(x) > 1, prune = TRUE)
+Assemblage=colnames((otu_table(Assemblage)))
+Assemblage
+Microbiome <- prune_samples("NB7_WGA", nb7)
+Microbiome <- filter_taxa(Microbiome, function(x) sum(x) > 1, prune = TRUE)
+Microbiome=colnames((otu_table(Microbiome)))
+Microbiome
+
+
+calculate.overlap(
+                  x=list("Bacterioplankton"=Bacterioplankton, 
+                         "Microbiome"=Microbiome, 
+                         "Assemblage"=Assemblage))
+
+shared=intersect(row.names(Bacterioplankton),row.names(Microbiome))
+length(shared)
+nb7_bacterio=Bacterioplankton
+nb7_micro=Microbiome
+nb7_assem=Assemblage
+
+venn1=venn.diagram(x=list(nb7_bacterio,
+                          nb7_micro,
+                          nb7_assem),
+             category.names=c("Bacterioplankton",
+                              "Microbiome"
+                              ,"Assemblage"),
+              filename = NULL,
+             main="PopC NB7",
+          #  main.cex=1.4,
+             height=1,width=1,
+             cat.cex=1,
+             scaled = TRUE,
+               fontfamily=rep("sans", 7),
+                         cat.fontfamily=rep("sans", 3))
+
+cowplot::plot_grid(venn1)
+
+ven=venn.diagram(x=list(nb7_bacterio,
+                          nb7_micro,
+                          nb7_assem),
+             category.names=c("Bacterioplankton",
+                              "Microbiome"
+                              ,"Assemblage"),
+              filename = NULL,
+             main="PopC NB7",
+          #  main.cex=1.4,
+             height=1,width=1,
+             cat.cex=1,
+             scaled = TRUE,
+               fontfamily=rep("sans", 7),
+                         cat.fontfamily=rep("sans", 3))
+
+cowplot::plot_grid(ven)
+
+
+cam=calculate.overlap(x=list(nb7_bacterio,
+                             nb7_micro,
+                             nb7_assem))
+
+names(cam) <- c("all",
+                "Bacterio-Micro",
+                "Bacterio-Assemb",
+                "Micro-Assemb",
+                "Bacterio", "Micro", "Assemb")
+
+
+cam
+tax_mat <- as(tax_table(nb7), "matrix")
+taxa_to_keep=c("Otu650")
+subset_tax_mat <- tax_mat[rownames(tax_mat) %in% taxa_to_keep, ]
+subset_tax_mat
+
+taxa_to_keep=c("Otu37")
+subset_tax_mat <- tax_mat[rownames(tax_mat) %in% taxa_to_keep, ]
+subset_tax_mat
+
+cowplot::plot_grid(venn1)
+
+length(cam$all)
+length(cam$Bacterio)
+length(cam$Micro)
+length(cam$Assemb)
+length(cam$`Bacterio-Micro`)
+length(cam$`Bacterio-Assemb`)
+length(cam$`Micro-Assemb`)
+
+
+```
+
+## RA5
+```{r}
+sample_data(cg)$Treatment
+
+RA5=subset_samples(cg, Treatment=="RA5" | Treatment=="RA5_Blank")
+sample_data(RA5)
+
+agg=tax_glom(RA5, taxrank="species")
+library(grid)
+library(VennDiagram)
+
+RA5 = merge_samples((agg), "Treatment_Multi")
+Bacterioplankton <- prune_samples("RA5_Blank_WGA", RA5)
+Bacterioplankton <- filter_taxa(Bacterioplankton, function(x) sum(x) > 1, prune = TRUE)
+Bacterioplankton=colnames((otu_table(Bacterioplankton)))
+Bacterioplankton
+Assemblage <- prune_samples("RA5_Filter", RA5)
+Assemblage <- filter_taxa(Assemblage, function(x) sum(x) > 1, prune = TRUE)
+Assemblage=colnames((otu_table(Assemblage)))
+Assemblage
+Microbiome <- prune_samples("RA5_WGA", RA5)
+Microbiome <- filter_taxa(Microbiome, function(x) sum(x) > 1, prune = TRUE)
+Microbiome=colnames((otu_table(Microbiome)))
+Microbiome
+
+venn_ra5=venn.diagram(x=list(Bacterioplankton,Microbiome, Assemblage),
+             category.names=c("Bacterioplankton","Microbiome","Assemblage"),
+              filename = NULL,
+             main="PopA RA5",
+             main.cex=2,
+             main.fontface	='bold')
+
+ra5_bacterio=Bacterioplankton
+ra5_micro=Microbiome
+ra5_assem=Assemblage
+
+
+venn_ra5=venn.diagram(x=list(ra5_bacterio,ra5_micro, ra5_assem),
+             category.names=c("Bacterioplankton","Microbiome","Assemblage"),
+              filename = NULL,
+             main="PopA RA5",
+             main.cex=1.4,
+             height=1,width=1,
+             cat.cex=1,
+             scaled = TRUE,
+               fontfamily=rep("sans", 7),
+                         cat.fontfamily=rep("sans", 3),
+	ext.text = TRUE,
+	ext.line.lwd = 2,
+	ext.dist = -0.15,
+	ext.length = 0.9,
+	ext.pos = -4)
+
+cowplot::plot_grid(venn1, venn_ra5)
+
+
+cam=calculate.overlap(x=list(ra5_bacterio,
+                             ra5_micro,
+                            ra5_assem))
+
+names(cam) <- c("all",
+                "Bacterio-Micro",
+                "Bacterio-Assemb",
+                "Micro-Assemb",
+                "Bacterio", "Micro", "Assemb")
+cam
+tax_mat <- as(tax_table(RA5), "matrix")
+taxa_to_keep=cam$Bacterio
+subset_tax_mat <- tax_mat[rownames(tax_mat) %in% taxa_to_keep, ]
+subset_tax_mat
+taxa_to_keep=cam$Micro
+subset_tax_mat <- tax_mat[rownames(tax_mat) %in% taxa_to_keep, ]
+subset_tax_mat
+
+
+
+length(cam$all)
+length(cam$Bacterio)
+length(cam$Micro)
+length(cam$Assemb)
+length(cam$`Bacterio-Micro`)
+length(cam$`Bacterio-Assemb`)
+length(cam$`Micro-Assemb`)
+```
+
+
+
+## RD4
+
+```{r}
+
+sample_data(cg)$Treatment
+
+RD4=subset_samples(cg, Treatment=="RD4" | Treatment=="RD4_Blank")
+sample_data(RD4)
+
+agg=tax_glom(RD4, taxrank="species")
+library(grid)
+library(VennDiagram)
+
+RD4 = merge_samples((agg), "Treatment_Multi")
+Bacterioplankton <- prune_samples("RD4_Blank_WGA", RD4)
+Bacterioplankton <- filter_taxa(Bacterioplankton, function(x) sum(x) > 1, prune = TRUE)
+Bacterioplankton=colnames((otu_table(Bacterioplankton)))
+Bacterioplankton
+Assemblage <- prune_samples("RD4_Filter", RD4)
+Assemblage <- filter_taxa(Assemblage, function(x) sum(x) > 1, prune = TRUE)
+Assemblage=colnames((otu_table(Assemblage)))
+Assemblage
+Microbiome <- prune_samples("RD4_WGA", RD4)
+Microbiome <- filter_taxa(Microbiome, function(x) sum(x) > 1, prune = TRUE)
+Microbiome=colnames((otu_table(Microbiome)))
+Microbiome
+
+
+rd4_bacterio=Bacterioplankton
+rd4_micro=Microbiome
+rd4_assem=Assemblage
+
+venn_rd4=venn.diagram(x=list(rd4_bacterio,rd4_micro, rd4_assem),
+             category.names=c("Bacterioplankton","Microbiome","Assemblage"),
+              filename = NULL,
+             main="PopA RD4",
+             main.cex=1.4,
+               fontfamily=rep("sans", 7),
+                         cat.fontfamily=rep("sans", 3),
+             height=1,width=1,
+             cat.cex=1,
+             scaled = TRUE,
+	ext.text = TRUE,
+	ext.line.lwd = 2,
+	ext.dist = -0.15,
+	ext.length = 0.9,
+	ext.pos = -4)
+cowplot::plot_grid(venn_rd4)
+
+cowplot::plot_grid(venn1, venn_ra5,venn_rd4,scale=0.8)
+
+
+cam=calculate.overlap(x=list(rd4_bacterio,
+                             rd4_micro,
+                            rd4_assem))
+
+names(cam) <- c("all",
+                "Bacterio-Micro",
+                "Bacterio-Assemb",
+                "Micro-Assemb",
+                "Bacterio", "Micro", "Assemb")
+cam
+tax_mat <- as(tax_table(RD4), "matrix")
+taxa_to_keep=cam$Bacterio
+subset_tax_mat <- tax_mat[rownames(tax_mat) %in% taxa_to_keep, ]
+subset_tax_mat
+
+
+taxa_to_keep=cam$Micro
+subset_tax_mat <- tax_mat[rownames(tax_mat) %in% taxa_to_keep, ]
+subset_tax_mat
+
+
+
+length(cam$all)
+length(cam$Bacterio)
+length(cam$Micro)
+length(cam$Assemb)
+length(cam$`Bacterio-Micro`)
+length(cam$`Bacterio-Assemb`)
+length(cam$`Micro-Assemb`)
+
+```
+
+
+## YE5
+
+```{r}
+
+sample_data(cg)$Treatment
+
+YE5=subset_samples(cg, Treatment=="YE5" | Treatment=="YE5_Blank")
+sample_data(YE5)
+
+agg=tax_glom(YE5, taxrank="species")
+library(grid)
+library(VennDiagram)
+
+YE5 = merge_samples((agg), "Treatment_Multi")
+sample_data(YE5)
+Bacterioplankton <- prune_samples("YE5_Blank_WGA", YE5)
+Bacterioplankton <- filter_taxa(Bacterioplankton, function(x) sum(x) > 1, prune = TRUE)
+Bacterioplankton=colnames((otu_table(Bacterioplankton)))
+Bacterioplankton
+Assemblage <- prune_samples("YE5_Filter", YE5)
+Assemblage <- filter_taxa(Assemblage, function(x) sum(x) > 1, prune = TRUE)
+Assemblage=colnames((otu_table(Assemblage)))
+Assemblage
+Microbiome <- prune_samples("YE5_WGA", YE5)
+Microbiome <- filter_taxa(Microbiome, function(x) sum(x) > 1, prune = TRUE)
+Microbiome=colnames((otu_table(Microbiome)))
+Microbiome
+
+venn_ye5=venn.diagram(x=list(Bacterioplankton,Microbiome, Assemblage),
+             category.names=c("Bacterioplankton","Microbiome","Assemblage"),
+              filename = NULL,
+             main="PopB YE5",
+             fontfamily=rep("sans", 7),
+                         cat.fontfamily=rep("sans", 3),
+             main.cex=1.4,
+             height=1,width=1,
+             cat.cex=1,
+             scaled = TRUE,
+	ext.text = TRUE,
+	ext.line.lwd = 2,
+	ext.dist = -0.15,
+	ext.length = 0.9,
+	ext.pos = -4)
+cowplot::plot_grid(venn_ye5)
+
+cowplot::plot_grid(venn1, venn_ra5,venn_rd4,venn_ye5,
+                   scale=0.8)
+cowplot::plot_grid(venn_ra5,venn_rd4,venn_ye5,venn1,
+                   nrow=1,
+                   scale=0.5)
+
+
+
+cam=calculate.overlap(x=list(Bacterioplankton,
+                             Microbiome,
+                            Assemblage))
+
+names(cam) <- c("all",
+                "Bacterio-Micro",
+                "Bacterio-Assemb",
+                "Micro-Assemb",
+                "Bacterio", "Micro", "Assemb")
+cam
+tax_mat <- as(tax_table(YE5), "matrix")
+taxa_to_keep=c("Otu752")
+subset_tax_mat <- tax_mat[rownames(tax_mat) %in% taxa_to_keep, ]
+subset_tax_mat
+
+
+taxa_to_keep=c("Otu276","Otu650","Otu1301", "Otu738","Otu827")
+subset_tax_mat <- tax_mat[rownames(tax_mat) %in% taxa_to_keep, ]
+subset_tax_mat
+
+
+
+length(cam$all)
+length(cam$Bacterio)
+length(cam$Micro)
+length(cam$Assemb)
+length(cam$`Bacterio-Micro`)
+length(cam$`Bacterio-Assemb`)
+length(cam$`Micro-Assemb`)
+```
+
+
+
+# General Alpha statistics 
+```{r}
+cg_filt=subset_samples(cg, keep_2026 =='yes')
+sample_data(cg_filt)
+cg_filt
+s=specnumber(t(otu_table(cg_filt)))
+s
+
+# spec number for 
+filter=subset_samples(cg_filt,clonal2=='monoclonal' & definition =='assemblage')
+filter
+s2=specnumber(t(otu_table(filter)))
+mean(s2)
+sd(s2)
+
+filter=subset_samples(cg_filt,clonal2=='multiclonal' & definition =='assemblage')
+s=specnumber(t(otu_table(filter)))
+mean(s)
+sd(s)
+
+t.test(s, s2)
+
+```
+
+# beta stats
+
+```{r}
+library(CoDaSeq)
+library(DESeq2)
+cg_filt <- filter_taxa(cg_filt, function(x) sum(x) > 1, prune = TRUE)
+
+########################################################################
+# variance stabilizing transformation 
+# from 16S stats 
+ddst=phyloseq_to_deseq2(cg_filt,~Treatment3)
+# 
+gm_mean = function(x, na.rm=TRUE){
+  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+}
+trial.deseq=estimateSizeFactors(ddst,geoMeans = apply(counts(ddst), 1, gm_mean))
+data.vst <- DESeq2::varianceStabilizingTransformation(trial.deseq, blind = T)
+# Apply variance stabilizing transformation
+# Extract transformed OTU table
+fieldEco.vstMat <- assay(data.vst)
+# And put into my phloseq object
+OTU = otu_table(fieldEco.vstMat, taxa_are_rows=T)
+comp_vst=phyloseq(OTU,map,tax2,tree)
+comp_clr=comp_vst
+```
+
+
+
+
+
+## microbiomes + bacterio
+```{r}
+library(CoDaSeq)
+library(DESeq2)
+cg_filt2=subset_samples(cg_filt, extract=="WGA" )
+########################################################################
+# variance stabilizing transformation 
+# from 16S stats 
+ddst=phyloseq_to_deseq2(cg_filt2,~Treatment3)
+# 
+gm_mean = function(x, na.rm=TRUE){
+  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+}
+trial.deseq=estimateSizeFactors(ddst,geoMeans = apply(counts(ddst), 1, gm_mean))
+data.vst <- DESeq2::varianceStabilizingTransformation(trial.deseq, blind = T)
+# Apply variance stabilizing transformation
+# Extract transformed OTU table
+fieldEco.vstMat <- assay(data.vst)
+# And put into my phloseq object
+OTU = otu_table(fieldEco.vstMat, taxa_are_rows=T)
+comp_vst=phyloseq(OTU,map,tax2,tree)
+comp_clr=comp_vst
+
+
+p=prcomp(t(otu_table(comp_clr)))
+summary(p)
+
+{plot(p$x[,1],p$x[,2],pch=sample_data(comp_clr)$pch,
+     bg=as.character(sample_data(comp_clr)$col),
+     xlab = "PCA 30%", ylab= "PCA 16%")
+ordiellipse(p$x,
+     #    group=as.factor(sample_data(comp_clr)$Treatment),
+          group=as.factor(sample_data(comp_clr)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+
+}
+otu2=otu_table(comp_clr)
+euc=phyloseq::distance(t(otu2),'euclidean')
+p=prcomp(euc,scale=T,center=T)
+
+
+
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3))
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$diatom_control))
+
+{
+  
+  par(mar=c(15,
+            5,1,1),xpd=FALSE)
+  plot(p$x[,1],p$x[,2],pch=sample_data(comp_clr)$pch,
+     bg=as.character(sample_data(comp_clr)$col2),
+     xlab = "PCoA1 49.85%", 
+     ylab= "PCoA2 10.97%",
+     yaxt='n')
+  axis(2, at=c(-2,0,2))
+ordiellipse(p$x,
+     #    group=as.factor(sample_data(comp_clr)$Treatment),
+          group=as.factor(sample_data(comp_clr)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-2, -5,
+       legend=c("RA5","RD4", "YC5", "NB7", "RD4 + RA5", "RD4 + YE5", "RD4+NB7"),
+       bty='n',
+  #    col=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+       pt.bg=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+
+       pch=c(22,23,22,23,21,22,23))
+
+}
+
+{
+  
+  par(mar=c(10,
+            5,1,1),xpd=T)
+  plot(p$x[,1],p$x[,2],pch=sample_data(comp_clr)$pch,
+     bg=as.character(sample_data(comp_clr)$col2),
+     xlab = "PCoA1 49.85%", 
+     ylab= "PCoA2 10.97%",
+     yaxt='n')
+  axis(2, at=c(-2,0,2))
+ordiellipse(p$x,
+     #    group=as.factor(sample_data(comp_clr)$Treatment),
+          group=as.factor(sample_data(comp_clr)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-2, -5,
+       legend=c("RA5","RD4", "YC5", "NB7", "RD4 + RA5", "RD4 + YE5", "RD4+NB7"),
+       bty='n',
+  #    col=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+       pt.bg=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+
+       pch=c(22,23,22,23,21,22,23))
+
+}
+
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3))
+```
+
+## microbiomes
+```{r}
+library(CoDaSeq)
+library(DESeq2)
+cg_filt2=subset_samples(cg_filt, extract=="WGA" & definition =="microbiome")
+########################################################################
+# variance stabilizing transformation 
+# from 16S stats 
+ddst=phyloseq_to_deseq2(cg_filt2,~Treatment3)
+# 
+gm_mean = function(x, na.rm=TRUE){
+  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+}
+trial.deseq=estimateSizeFactors(ddst,geoMeans = apply(counts(ddst), 1, gm_mean))
+data.vst <- DESeq2::varianceStabilizingTransformation(trial.deseq, blind = T)
+# Apply variance stabilizing transformation
+# Extract transformed OTU table
+fieldEco.vstMat <- assay(data.vst)
+# And put into my phloseq object
+OTU = otu_table(fieldEco.vstMat, taxa_are_rows=T)
+comp_vst=phyloseq(OTU,map,tax2,tree)
+comp_clr=comp_vst
+
+
+p=prcomp(t(otu_table(comp_clr)))
+summary(p)
+
+{plot(p$x[,1],p$x[,2],pch=sample_data(comp_clr)$pch,
+     bg=as.character(sample_data(comp_clr)$col),
+     xlab = "PCA 30%", ylab= "PCA 16%")
+ordiellipse(p$x,
+     #    group=as.factor(sample_data(comp_clr)$Treatment),
+          group=as.factor(sample_data(comp_clr)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+
+}
+otu2=otu_table(comp_clr)
+euc=phyloseq::distance(t(otu2),'euclidean')
+p=prcomp(euc,scale=T,center=T)
+summary(p)
+
+
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3))
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$diatom_control))
+
+{
+  
+  par(mar=c(15,
+            5,1,1),xpd=FALSE)
+  plot(p$x[,1],p$x[,2],pch=sample_data(comp_clr)$pch,
+     bg=as.character(sample_data(comp_clr)$col2),
+     xlab = "PCoA1 35.02 %",
+     ylab= "PCoA2 9.99 %", 
+     yaxt='n', xaxt='n')
+axis(2, at=c(-2,0,4))
+axis(1, at=c(-4,0,5,10))
+ordiellipse(p$x,
+     #    group=as.factor(sample_data(comp_clr)$Treatment),
+          group=as.factor(sample_data(comp_clr)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-2, -5,
+       legend=c("RA5","RD4", "YC5", "NB7", "RD4 + RA5", "RD4 + YE5", "RD4+NB7"),
+       bty='n',
+  #    col=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+       pt.bg=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+
+       pch=c(22,23,22,23,21,22,23))
+
+}
+
+{
+  
+  par(mar=c(10,
+            5,1,1),xpd=T)
+  plot(p$x[,1],p$x[,2],pch=sample_data(comp_clr)$pch,
+     bg=as.character(sample_data(comp_clr)$col2),
+     xlab = "PCoA1 49.85%", 
+     ylab= "PCoA2 10.97%",
+     yaxt='n')
+  axis(2, at=c(-2,0,2))
+ordiellipse(p$x,
+     #    group=as.factor(sample_data(comp_clr)$Treatment),
+          group=as.factor(sample_data(comp_clr)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-2, -5,
+       legend=c("RA5","RD4", "YC5", "NB7", "RD4 + YE5", "RD4+NB7"),
+       bty='n',
+  #    col=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+       pt.bg=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+
+       pch=c(22,23,22,23,21,22,23))
+
+}
+
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3))
+
+cg_filta=subset_samples(comp_clr, clonal=='monoclonal')
+otu2=otu_table(cg_filta)
+euc=phyloseq::distance(t(otu2),'euclidean')
+anosim(euc, grouping=as.factor(sample_data(cg_filta)$Pop3))
+anosim(euc, grouping=as.factor(sample_data(cg_filta)$Pop3))
+adonis2(euc~as.factor(sample_data(cg_filta)$Pop3))
+
+```
+
+
+## assemblages vst 
+```{r}
+library(CoDaSeq)
+library(DESeq2)
+cg_filt2=subset_samples(cg_filt, definition =='assemblage')
+########################################################################
+# variance stabilizing transformation 
+# from 16S stats 
+ddst=phyloseq_to_deseq2(cg_filt2,~Treatment3)
+# 
+gm_mean = function(x, na.rm=TRUE){
+  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+}
+trial.deseq=estimateSizeFactors(ddst,geoMeans = apply(counts(ddst), 1, gm_mean))
+data.vst <- DESeq2::varianceStabilizingTransformation(trial.deseq, blind = T)
+# Apply variance stabilizing transformation
+# Extract transformed OTU table
+fieldEco.vstMat <- assay(data.vst)
+# And put into my phloseq object
+OTU = otu_table(fieldEco.vstMat, taxa_are_rows=T)
+comp_vst=phyloseq(OTU,map,tax2,tree)
+comp_clr=comp_vst
+
+
+p=prcomp(t(otu_table(comp_clr)))
+summary(p)
+
+{plot(p$x[,1],p$x[,2],pch=sample_data(comp_clr)$pch,
+     bg=as.character(sample_data(comp_clr)$col),
+     xlab = "PCA 30%", ylab= "PCA 16%")
+ordiellipse(p$x,
+     #    group=as.factor(sample_data(comp_clr)$Treatment),
+          group=as.factor(sample_data(comp_clr)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+
+}
+otu2=otu_table(comp_clr)
+euc=phyloseq::distance(t(otu2),'euclidean')
+p=prcomp(euc,scale=T,center=T)
+summary(p)
+
+
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3))
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$diatom_control))
+
+{
+  
+  par(mar=c(15,
+            5,1,1),xpd=FALSE)
+  plot(p$x[,1],p$x[,2],pch=sample_data(comp_clr)$pch,
+     bg=as.character(sample_data(comp_clr)$col2),
+     xlab = "PCoA1 41.11 %",
+     ylab= "PCoA2 10.18 %",
+     yaxt='n')
+  axis(2, at=c(-2,0,2))
+ordiellipse(p$x,
+     #    group=as.factor(sample_data(comp_clr)$Treatment),
+          group=as.factor(sample_data(comp_clr)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-2, -5,
+       legend=c("RA5","RD4", "YC5", "NB7", "RD4 + RA5", "RD4 + YE5", "RD4+NB7"),
+       bty='n',
+  #    col=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+       pt.bg=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+
+       pch=c(22,23,22,23,21,22,23))
+
+}
+
+{
+  
+  par(mar=c(15,
+            5,1,1),xpd=T)
+  plot(p$x[,1],p$x[,2],pch=sample_data(comp_clr)$pch,
+     bg=as.character(sample_data(comp_clr)$col2),
+       xlab = "PCoA1 41.11 %",
+     ylab= "PCoA2 10.18 %",
+     yaxt='n')
+  axis(2, at=c(-2,0,2))
+ordiellipse(p$x,
+     #    group=as.factor(sample_data(comp_clr)$Treatment),
+          group=as.factor(sample_data(comp_clr)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-2, -5,
+        legend=c("RA5","RD4", "YC5", "NB7", "RD4 + RA5", "RD4 + YE5", "RD4 + NB7"),
+       bty='n',
+  #    col=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+       pt.bg=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+
+       pch=c(22,23,22,23,21,22,23))
+
+}
+
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3))
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3),strata=sample_data(comp_clr)$Treatment2)
+
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3))
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$clonal))
+adonis2(euc~(sample_data(comp_clr)$clonal))
+
+```
+
+## assemblages vst 
+```{r}
+library(CoDaSeq)
+library(DESeq2)
+cg_filt2=subset_samples(cg_filt, definition =='assemblage' | definition == "inoculum_T5")
+########################################################################
+# variance stabilizing transformation 
+# from 16S stats 
+ddst=phyloseq_to_deseq2(cg_filt2,~Treatment3)
+# 
+gm_mean = function(x, na.rm=TRUE){
+  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+}
+trial.deseq=estimateSizeFactors(ddst,geoMeans = apply(counts(ddst), 1, gm_mean))
+data.vst <- DESeq2::varianceStabilizingTransformation(trial.deseq, blind = T)
+# Apply variance stabilizing transformation
+# Extract transformed OTU table
+fieldEco.vstMat <- assay(data.vst)
+# And put into my phloseq object
+OTU = otu_table(fieldEco.vstMat, taxa_are_rows=T)
+comp_vst=phyloseq(OTU,map,tax2,tree)
+comp_clr=comp_vst
+
+
+p=prcomp(t(otu_table(comp_clr)))
+summary(p)
+
+{plot(p$x[,1],p$x[,2],pch=sample_data(comp_clr)$pch,
+     bg=as.character(sample_data(comp_clr)$col),
+     xlab = "PCA 30%", ylab= "PCA 16%")
+ordiellipse(p$x,
+     #    group=as.factor(sample_data(comp_clr)$Treatment),
+          group=as.factor(sample_data(comp_clr)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+
+}
+otu2=otu_table(comp_clr)
+euc=phyloseq::distance(t(otu2),'euclidean')
+p=prcomp(euc,scale=T,center=T)
+summary(p)
+
+
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3), strata=sample_data(comp_clr)$Treatment2)
+anosim(euc, grouping=(sample_data(comp_clr)$diatom_control))
+adonis2(euc ~ (sample_data(comp_clr)$diatom_control))
+
+{
+  
+  par(mar=c(15,
+            5,1,1),xpd=FALSE)
+  plot(p$x[,1],p$x[,2],pch=sample_data(comp_clr)$pch,
+     bg=as.character(sample_data(comp_clr)$col2),
+     xlab = "PCoA1 41.11 %",
+     ylab= "PCoA2 10.18 %",
+     yaxt='n')
+  axis(2, at=c(-2,0,2))
+ordiellipse(p$x,
+     #    group=as.factor(sample_data(comp_clr)$Treatment),
+          group=as.factor(sample_data(comp_clr)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-2, -5,
+       legend=c("RA5","RD4", "YC5", "NB7", "RD4 + RA5", "RD4 + YE5", "RD4+NB7"),
+       bty='n',
+  #    col=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+       pt.bg=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+
+       pch=c(22,23,22,23,21,22,23))
+
+}
+
+{
+  
+  par(mar=c(15,
+            5,1,1),xpd=T)
+  plot(p$x[,1],p$x[,2],pch=sample_data(comp_clr)$pch,
+     bg=as.character(sample_data(comp_clr)$col2),
+       xlab = "PCoA1 41.11 %",
+     ylab= "PCoA2 10.18 %",
+     yaxt='n')
+  axis(2, at=c(-2,0,2))
+ordiellipse(p$x,
+     #    group=as.factor(sample_data(comp_clr)$Treatment),
+          group=as.factor(sample_data(comp_clr)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-2, -5,
+        legend=c("RA5","RD4", "YC5", "NB7", "RD4 + RA5", "RD4 + YE5", "RD4 + NB7"),
+       bty='n',
+  #    col=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+       pt.bg=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+
+       pch=c(22,23,22,23,21,22,23))
+
+}
+
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3))
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3),strata=sample_data(comp_clr)$Treatment2)
+
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3))
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$clonal))
+
+
+```
+
+# philr 
+### microbiomes and bact
+```{r}
+library(philr)
+sub=subset_samples(cg_filt, extract=="WGA" & definition =="microbiome")
+sub=subset_samples(cg_filt, extract=="WGA")
+
+sub
+
+
+
+GP <- transform_sample_counts(sub, function(x) x+1)
+#
+GP
+phy_tree(GP) <- makeNodeLabel(phy_tree(GP), method="number", prefix='n')
+name.balance(phy_tree(GP), tax_table(GP), 'n1')
+
+otu.table <- t(otu_table(GP))
+tree <- phy_tree(GP)
+metadata <- sample_data(GP)
+tax <- tax_table(GP)
+
+gp.philr <- philr(otu.table, tree, 
+                  part.weights='enorm.x.gm.counts', 
+                  ilr.weights='blw.sqrt')
+
+gp.dist <- dist(gp.philr, method="euclidean")
+gp.pcoa <- ordinate(GP, 'PCoA', distance=gp.dist)
+gp.p=prcomp(gp.dist)
+
+{plot(gp.pcoa$vectors[,1],gp.pcoa$vectors[,2],pch=sample_data(sub)$pch,
+     bg=as.character(sample_data(sub)$col),
+     xlab = "PCoA 1 44.94%", ylab= "PCoA 2 17.4%")
+ordiellipse(gp.pcoa$vectors,
+           group=as.factor(sample_data(sub)$Treatment),label=T,
+           col=c('gray70','gray50','forestgreen','green','navy','blue'),
+           kind ='sd',conf=0.8)}
+
+
+
+{
+  par(mar=c(15,
+            5,1,1),xpd=F)
+  plot(gp.p$x[,1],gp.p$x[,2],pch=sample_data(sub)$pch,
+     bg=as.character(sample_data(sub)$col2),
+       xlab = "PCoA1 39.68 %",
+     ylab= "PCoA2 19.46 %")
+# axis(2, at=c(-2,0,2))
+ordiellipse(gp.p$x,
+    #    group=as.factor(sample_data(comp_clr)$Treatment),
+         group=as.factor(sample_data(sub)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-20,-40,
+        legend=c("RA5","RD4", "YC5", "NB7", "RD4 + RA5", "RD4 + YE5", "RD4 + NB7"),
+       bty='n',
+  #    col=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+       pt.bg=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+
+       pch=c(22,23,22,23,21,22,23))
+
+}
+
+adonis2(gp.dist~sample_data(sub)$diatom_control)
+adonis2(gp.dist~sample_data(sub)$diatom_control)
+
+adonis2(gp.dist~temp+pop,by='term')
+
+```
+
+### microbiomes monoclonal
+```{r}
+library(philr)
+sub=subset_samples(cg_filt, extract=="WGA" & definition =="microbiome")
+sub=subset_samples(cg_filt, extract=="WGA" & definition =="microbiome")
+
+sub
+
+
+
+GP <- transform_sample_counts(sub, function(x) x+1)
+#
+GP
+phy_tree(GP) <- makeNodeLabel(phy_tree(GP), method="number", prefix='n')
+name.balance(phy_tree(GP), tax_table(GP), 'n1')
+
+otu.table <- t(otu_table(GP))
+tree <- phy_tree(GP)
+metadata <- sample_data(GP)
+tax <- tax_table(GP)
+
+gp.philr <- philr(otu.table, tree, 
+                  part.weights='enorm.x.gm.counts', 
+                  ilr.weights='blw.sqrt')
+
+gp.dist <- dist(gp.philr, method="euclidean")
+gp.pcoa <- ordinate(GP, 'PCoA', distance=gp.dist)
+gp.p=prcomp(gp.dist)
+
+{plot(gp.pcoa$vectors[,1],gp.pcoa$vectors[,2],pch=sample_data(sub)$pch,
+     bg=as.character(sample_data(sub)$col),
+     xlab = "PCoA 1 44.94%", ylab= "PCoA 2 17.4%")
+ordiellipse(gp.pcoa$vectors,
+           group=as.factor(sample_data(sub)$Treatment),label=T,
+           col=c('gray70','gray50','forestgreen','green','navy','blue'),
+           kind ='sd',conf=0.8)}
+
+
+
+{
+  par(mar=c(15,
+            5,1,1),xpd=F)
+  plot(gp.p$x[,1],gp.p$x[,2],pch=sample_data(sub)$pch,
+     bg=as.character(sample_data(sub)$col2),
+       xlab = "PCoA1 39.68 %",
+     ylab= "PCoA2 19.46 %")
+# axis(2, at=c(-2,0,2))
+ordiellipse(gp.p$x,
+    #    group=as.factor(sample_data(comp_clr)$Treatment),
+         group=as.factor(sample_data(sub)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-20,-40,
+        legend=c("RA5","RD4", "YC5", "NB7", "RD4 + RA5", "RD4 + YE5", "RD4 + NB7"),
+       bty='n',
+  #    col=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+       pt.bg=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+
+       pch=c(22,23,22,23,21,22,23))
+
+}
+
+adonis2(gp.dist~sample_data(sub)$clonal)
+anosim(gp.dist,sample_data(sub)$clonal)
+anosim(gp.dist,sample_data(sub)$Pop3, strata=sample_data(sub)$Treatment)
+anosim(gp.dist,sample_data(sub)$clonal, strata=sample_data(sub)$Treatment)
+
+adonis2(gp.dist~sample_data(sub)$Pop3)
+adonis2(gp.dist~sample_data(sub)$Pop3 + sample_data(sub)$clonal, by='margin')
+
+
+
+```
+
+
+### assemblage control 
+```{r}
+library(philr)
+sub=subset_samples(cg_filt, extract=="WGA" & definition =="microbiome")
+sub=subset_samples(cg_filt, definition =='assemblage' | definition == "inoculum_T5")
+
+sub
+
+
+
+GP <- transform_sample_counts(sub, function(x) x+1)
+#
+GP
+phy_tree(GP) <- makeNodeLabel(phy_tree(GP), method="number", prefix='n')
+name.balance(phy_tree(GP), tax_table(GP), 'n1')
+
+otu.table <- t(otu_table(GP))
+tree <- phy_tree(GP)
+metadata <- sample_data(GP)
+tax <- tax_table(GP)
+
+gp.philr <- philr(otu.table, tree, 
+                  part.weights='enorm.x.gm.counts', 
+                  ilr.weights='blw.sqrt')
+
+gp.dist <- dist(gp.philr, method="euclidean")
+gp.pcoa <- ordinate(GP, 'PCoA', distance=gp.dist)
+gp.p=prcomp(gp.dist)
+
+{plot(gp.pcoa$vectors[,1],gp.pcoa$vectors[,2],pch=sample_data(sub)$pch,
+     bg=as.character(sample_data(sub)$col),
+     xlab = "PCoA 1 44.94%", ylab= "PCoA 2 17.4%")
+ordiellipse(gp.pcoa$vectors,
+           group=as.factor(sample_data(sub)$Treatment),label=T,
+           col=c('gray70','gray50','forestgreen','green','navy','blue'),
+           kind ='sd',conf=0.8)}
+
+
+anosim(gp.dist, grouping=as.factor(sample_data(sub)$Pop3), strata=sample_data(sub)$Treatment2)
+anosim(gp.dist, grouping=(sample_data(sub)$diatom_control))
+adonis2(gp.dist ~ (sample_data(sub)$diatom_control))
+adonis2(gp.dist ~ (sample_data(sub)$diatom_control),strata=sample_data(sub)$Treatment2)
+
+
+```
+
+### assemblage
+```{r}
+library(philr)
+sub=subset_samples(cg_filt, extract=="WGA" & definition =="microbiome")
+sub=subset_samples(cg_filt, definition =='assemblage')
+
+sub
+
+
+
+GP <- transform_sample_counts(sub, function(x) x+1)
+#
+GP
+phy_tree(GP) <- makeNodeLabel(phy_tree(GP), method="number", prefix='n')
+name.balance(phy_tree(GP), tax_table(GP), 'n1')
+
+otu.table <- t(otu_table(GP))
+tree <- phy_tree(GP)
+metadata <- sample_data(GP)
+tax <- tax_table(GP)
+
+gp.philr <- philr(otu.table, tree, 
+                  part.weights='enorm.x.gm.counts', 
+                  ilr.weights='blw.sqrt')
+
+gp.dist <- dist(gp.philr, method="euclidean")
+gp.pcoa <- ordinate(GP, 'PCoA', distance=gp.dist)
+gp.p=prcomp(gp.dist)
+
+{plot(gp.pcoa$vectors[,1],gp.pcoa$vectors[,2],pch=sample_data(sub)$pch,
+     bg=as.character(sample_data(sub)$col),
+     xlab = "PCoA 1 44.94%", ylab= "PCoA 2 17.4%")
+ordiellipse(gp.pcoa$vectors,
+           group=as.factor(sample_data(sub)$Treatment),label=T,
+           col=c('gray70','gray50','forestgreen','green','navy','blue'),
+           kind ='sd',conf=0.8)}
+
+
+
+{
+  par(mar=c(15,
+            5,1,1),xpd=F)
+  plot(gp.p$x[,1],gp.p$x[,2],pch=sample_data(sub)$pch,
+     bg=as.character(sample_data(sub)$col2),
+       xlab = "PCoA1 74.45 %",
+     ylab= "PCoA2 7.36 %")
+# axis(2, at=c(-2,0,2))
+ordiellipse(gp.p$x,
+    #    group=as.factor(sample_data(comp_clr)$Treatment),
+         group=as.factor(sample_data(sub)$Pop3),
+           col=c('black', 'navy', 'firebrick','forestgreen'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-20,-40,
+        legend=c("RA5","RD4", "YC5", "NB7", "RD4 + RA5", "RD4 + YE5", "RD4 + NB7"),
+       bty='n',
+  #    col=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+       pt.bg=c("navy",'navy', 'firebrick', 'forestgreen', 'black','black','black'),
+
+       pch=c(22,23,22,23,21,22,23))
+
+}
+
+anosim(gp.dist, grouping=as.factor(sample_data(sub)$Pop3), strata=sample_data(sub)$Treatment2)
+anosim(gp.dist, grouping=(sample_data(sub)$clonal))
+anosim(gp.dist, grouping=(sample_data(sub)$clonal))
+
+adonis2(gp.dist ~ (sample_data(sub)$clonal))
+adonis2(gp.dist ~ (sample_data(sub)$diatom_control),strata=sample_data(sub)$Treatment2)
+
+```
