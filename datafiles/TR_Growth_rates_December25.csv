@@ -1,0 +1,70 @@
+,treatment,isolate,treat_num,growth_rate,names,temp,treat2,id,population,isolate2,culture,clonal
+1,NB4,NB4,1,1.239593296,NB4 18 Xenic,18,single genotype 18C,xenic,PopC,NB4,xenic,monoclonal
+2,NB4,NB4,1,1.087239832,NB4 18 Xenic,18,single genotype 18C,xenic,PopC,NB4,xenic,monoclonal
+3,NB4,NB4,1,1.356069865,NB4 18 Xenic,18,single genotype 18C,xenic,PopC,NB4,xenic,monoclonal
+4,NB4_AX,NB4,2,1.139358779,NB4 18 Axenic,18,single genotype 18C,axenic,PopC,NB4,axenic,monoclonal
+5,NB4_AX,NB4,2,1.268885608,NB4 18 Axenic,18,single genotype 18C,axenic,PopC,NB4,axenic,monoclonal
+6,NB4_AX,NB4,2,1.131927133,NB4 18 Axenic,18,single genotype 18C,axenic,PopC,NB4,axenic,monoclonal
+7,NB6,NB6,3,1.112324623,NB6 18 Xenic,18,single genotype 18C,xenic,PopC,NB6,xenic,monoclonal
+8,NB6,NB6,3,1.183608839,NB6 18 Xenic,18,single genotype 18C,xenic,PopC,NB6,xenic,monoclonal
+9,NB6,NB6,3,0.92196192,NB6 18 Xenic,18,single genotype 18C,xenic,PopC,NB6,xenic,monoclonal
+10,NB6_AX,NB6,4,1.009582604,NB6 18 Axenic,18,single genotype 18C,axenic,PopC,NB6,axenic,monoclonal
+11,NB6_AX,NB6,4,1.096450156,NB6 18 Axenic,18,single genotype 18C,axenic,PopC,NB6,axenic,monoclonal
+12,NB6_AX,NB6,4,0.996461614,NB6 18 Axenic,18,single genotype 18C,axenic,PopC,NB6,axenic,monoclonal
+13,NB7,NB7,5,1.310703644,NB7 18 Xenic,18,single genotype 18C,xenic,PopC,NB7,xenic,monoclonal
+14,NB7,NB7,5,1.49780853,NB7 18 Xenic,18,single genotype 18C,xenic,PopC,NB7,xenic,monoclonal
+15,NB7,NB7,5,1.470415439,NB7 18 Xenic,18,single genotype 18C,xenic,PopC,NB7,xenic,monoclonal
+16,NB7_AX,NB7,6,1.474217283,NB7 18 Axenic,18,single genotype 18C,axenic,PopC,NB7,axenic,monoclonal
+17,NB7_AX,NB7,6,1.4840452,NB7 18 Axenic,18,single genotype 18C,axenic,PopC,NB7,axenic,monoclonal
+18,NB7_AX,NB7,6,1.222047805,NB7 18 Axenic,18,single genotype 18C,axenic,PopC,NB7,axenic,monoclonal
+19,RA4,RA4,7,1.223277194,RA4 18 Xenic,18,single genotype 18C,xenic,PopA,RA4,xenic,monoclonal
+20,RA4,RA4,7,1.349554903,RA4 18 Xenic,18,single genotype 18C,xenic,PopA,RA4,xenic,monoclonal
+21,RA4,RA4,7,1.15304597,RA4 18 Xenic,18,single genotype 18C,xenic,PopA,RA4,xenic,monoclonal
+22,RA4_AX,RA4,8,1.203433887,RA4 18 Axenic,18,single genotype 18C,axenic,PopA,RA4,axenic,monoclonal
+23,RA4_AX,RA4,8,1.242991296,RA4 18 Axenic,18,single genotype 18C,axenic,PopA,RA4,axenic,monoclonal
+24,RA4_AX,RA4,8,1.161156205,RA4 18 Axenic,18,single genotype 18C,axenic,PopA,RA4,axenic,monoclonal
+25,RA5,RA5,9,0.8699009,RA5 18 Xenic,18,single genotype 18C,xenic,PopA,RA5,xenic,monoclonal
+26,RA5,RA5,9,1.0825095,RA5 18 Xenic,18,single genotype 18C,xenic,PopA,RA5,xenic,monoclonal
+27,RA5,RA5,9,0.8512974,RA5 18 Xenic,18,single genotype 18C,xenic,PopA,RA5,xenic,monoclonal
+28,RA5_AX,RA5,10,0.9462571,RA5 18 Axenic,18,single genotype 18C,axenic,PopA,RA5,axenic,monoclonal
+29,RA5_AX,RA5,10,0.9609229,RA5 18 Axenic,18,single genotype 18C,axenic,PopA,RA5,axenic,monoclonal
+30,RA5_AX,RA5,10,1.0051456,RA5 18 Axenic,18,single genotype 18C,axenic,PopA,RA5,axenic,monoclonal
+31,RD4,RD4,11,1.065427748,RD4 18 Xenic,18,single genotype 18C,xenic,PopA,RD4,xenic,monoclonal
+32,RD4,RD4,11,0.946134755,RD4 18 Xenic,18,single genotype 18C,xenic,PopA,RD4,xenic,monoclonal
+33,RD4,RD4,11,0.967104883,RD4 18 Xenic,18,single genotype 18C,xenic,PopA,RD4,xenic,monoclonal
+34,RD4_AX,RD4,12,0.915719523,RD4 18 Axenic,18,single genotype 18C,axenic,PopA,RD4,axenic,monoclonal
+35,RD4_AX,RD4,12,0.733672824,RD4 18 Axenic,18,single genotype 18C,axenic,PopA,RD4,axenic,monoclonal
+36,RD4_AX,RD4,12,0.94999069,RD4 18 Axenic,18,single genotype 18C,axenic,PopA,RD4,axenic,monoclonal
+37,YC5,YC5,13,1.0769428,YC5 18 Xenic,18,single genotype 18C,xenic,PopB,YC5,xenic,monoclonal
+38,YC5,YC5,13,0.803273,YC5 18 Xenic,18,single genotype 18C,xenic,PopB,YC5,xenic,monoclonal
+39,YC5,YC5,13,0.971387,YC5 18 Xenic,18,single genotype 18C,xenic,PopB,YC5,xenic,monoclonal
+40,YC5_AX,YC5,14,0.8299523,YC5 18 Axenic,18,single genotype 18C,axenic,PopB,YC5,axenic,monoclonal
+41,YC5_AX,YC5,14,1.1127132,YC5 18 Axenic,18,single genotype 18C,axenic,PopB,YC5,axenic,monoclonal
+42,YC5_AX,YC5,14,0.8519422,YC5 18 Axenic,18,single genotype 18C,axenic,PopB,YC5,axenic,monoclonal
+43,YE5,YE5,15,1.115189397,YE5 18 Xenic,18,single genotype 18C,xenic,PopB,YE5,xenic,monoclonal
+44,YE5,YE5,15,1.13312713,YE5 18 Xenic,18,single genotype 18C,xenic,PopB,YE5,xenic,monoclonal
+45,YE5,YE5,15,1.080555436,YE5 18 Xenic,18,single genotype 18C,xenic,PopB,YE5,xenic,monoclonal
+46,YE5_AX,YE5,16,1.02140073,YE5 18 Axenic,18,single genotype 18C,axenic,PopB,YE5,axenic,monoclonal
+47,YE5_AX,YE5,16,0.929118087,YE5 18 Axenic,18,single genotype 18C,axenic,PopB,YE5,axenic,monoclonal
+48,YE5_AX,YE5,16,0.926220058,YE5 18 Axenic,18,single genotype 18C,axenic,PopB,YE5,axenic,monoclonal
+49,NB7_22,NB7,17,1.848514815,NB7 22 Xenic,22,single genotype 22C,xenic,PopC,NB7_22,xenic,monoclonal
+50,NB7_22,NB7,17,1.456016724,NB7 22 Xenic,22,single genotype 22C,xenic,PopC,NB7_22,xenic,monoclonal
+51,NB7_22,NB7,17,1.595387164,NB7 22 Xenic,22,single genotype 22C,xenic,PopC,NB7_22,xenic,monoclonal
+52,NB7_AX-22,NB7,18,1.820043614,NB7 22 Axenic,22,single genotype 22C,axenic,PopC,NB7_22,axenic,monoclonal
+53,NB7_AX-22,NB7,18,1.709547226,NB7 22 Axenic,22,single genotype 22C,axenic,PopC,NB7_22,axenic,monoclonal
+54,NB7_AX-22,NB7,18,1.751650249,NB7 22 Axenic,22,single genotype 22C,axenic,PopC,NB7_22,axenic,monoclonal
+55,RD4_22,RD4,19,1.341886742,RD4 22 Xenic,22,single genotype 22C,xenic,PopA,RD4_22,xenic,monoclonal
+56,RD4_22,RD4,19,1.26532056,RD4 22 Xenic,22,single genotype 22C,xenic,PopA,RD4_22,xenic,monoclonal
+57,RD4_22,RD4,19,1.428627552,RD4 22 Xenic,22,single genotype 22C,xenic,PopA,RD4_22,xenic,monoclonal
+58,RD4_AX-22,RD4,20,1.172344208,RD4 22 Axenic,22,single genotype 22C,axenic,PopA,RD4_22,axenic,monoclonal
+59,RD4_AX-22,RD4,20,1.321913087,RD4 22 Axenic,22,single genotype 22C,axenic,PopA,RD4_22,axenic,monoclonal
+60,RD4_AX-22,RD4,20,1.476685402,RD4 22 Axenic,22,single genotype 22C,axenic,PopA,RD4_22,axenic,monoclonal
+61,RA5_RD4,RA5+RD4,21,1.148851978,RA5_RD4 18 Xenic,18,multi-genotype 18C,xenic,multi,RA5_RD4,xenic,multiclonal
+62,RA5_RD4,RA5+RD4,21,1.161101606,RA5_RD4 18 Xenic,18,multi-genotype 18C,xenic,multi,RA5_RD4,xenic,multiclonal
+63,RA5_RD4,RA5+RD4,21,1.000821081,RA5_RD4 18 Xenic,18,multi-genotype 18C,xenic,multi,RA5_RD4,xenic,multiclonal
+64,RD4_NB7,RD4+NB7,22,1.077087657,RD4_NB7 18 Xenic,18,multi-genotype 18C,xenic,multi,RD4_NB7,xenic,multiclonal
+65,RD4_NB7,RD4+NB7,22,1.112022855,RD4_NB7 18 Xenic,18,multi-genotype 18C,xenic,multi,RD4_NB7,xenic,multiclonal
+66,RD4_NB7,RD4+NB7,22,1.222932403,RD4_NB7 18 Xenic,18,multi-genotype 18C,xenic,multi,RD4_NB7,xenic,multiclonal
+67,RD4_YE5,RD4+YE5,23,1.045397167,RD4_YE5 18 Xenic,18,multi-genotype 18C,xenic,multi,RD4_YE5,xenic,multiclonal
+68,RD4_YE5,RD4+YE5,23,1.050709417,RD4_YE5 18 Xenic,18,multi-genotype 18C,xenic,multi,RD4_YE5,xenic,multiclonal
+69,RD4_YE5,RD4+YE5,23,1.023227731,RD4_YE5 18 Xenic,18,multi-genotype 18C,xenic,multi,RD4_YE5,xenic,multiclonal

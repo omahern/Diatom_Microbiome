@@ -1,0 +1,95 @@
+#OTU ID	info	Treatment	Treatment2	Treatment3	Pop	Pop2	Pop3	extract	temp	col	col2	pch	culture	clonal	clonal2	definition	keep_2026	diatom_control	exp	temp_shift	used_inisolate	TR_Con	TR_Growth	Fm	FmDEC	FmD	Treatment_Multi	order
+OMA1	Bact-A_18	Bact_T5	Bact_T5	Bact_T5	env	Bact_T5	Bact_T5	Filter	18	gray70	gray70	25	control	control	control	inoculum_T5	yes	control	a	y							Bact_T5_Filter	86
+OMA2	Bact-B_18	Bact_T5	Bact_T5	Bact_T5	env	Bact_T5	Bact_T5	Filter	18	gray70	gray70	25	control	control	control	inoculum_T5	yes	control	a	y							Bact_T5_Filter	87
+OMA3	Bact-C_18	Bact_T5	Bact_T5	Bact_T5	env	Bact_T5	Bact_T5	Filter	18	gray70	gray70	25	control	control	control	inoculum_T5	yes	control	a	y							Bact_T5_Filter	88
+OMA4	Bact-D_18	Bact_T5	Bact_T5	Bact_T5	env	Bact_T5	Bact_T5	Filter	18	gray70	gray70	25	control	control	control	inoculum_T5	yes	control	a	y							Bact_T5_Filter	89
+OMA5	NB4-A_18	NB4	NB4	NB4	CG3	CG3	PopC	Filter	18	forestgreen	forestgreen	21	Single	monoclonal	monoclonal	assemblage	no	diatom	a			22845.34489	1.239593296	0.5111	1070.9336	0.5328	NB4_Filter	1
+OMA6	NB4-B_18	NB4	NB4	NB4	CG3	CG3	PopC	Filter	18	forestgreen	forestgreen	21	Single	monoclonal	monoclonal	assemblage	no	diatom	a				1.087239832	0.4993	1393.1132	0.5251	NB4_Filter	2
+OMA7	NB4-C_18	NB4	NB4	NB4	CG3	CG3	PopC	Filter	18	forestgreen	forestgreen	21	Single	monoclonal	monoclonal	assemblage	no	diatom	a			20673.09314	1.356069865	0.4821	1083.0909	0.4968	NB4_Filter	3
+OMA8	NB6-A_18	NB6	NB6	NB6	CG3	CG3	PopC	Filter	18	forestgreen	forestgreen	22	Single	monoclonal	monoclonal	assemblage	no	diatom	a			15780.09178	1.112324623	0.509	1104.2174	0.5337	NB6_Filter	4
+OMA9	NB6-B_18	NB6	NB6	NB6	CG3	CG3	PopC	Filter	18	forestgreen	forestgreen	22	Single	monoclonal	monoclonal	assemblage	no	diatom	a			15155.53998	1.183608839	0.5045	1232.6833	0.5312	NB6_Filter	5
+OMA10	NB6-C_18	NB6	NB6	NB6	CG3	CG3	PopC	Filter	18	forestgreen	forestgreen	22	Single	monoclonal	monoclonal	assemblage	no	diatom	a			15992.0101	0.92196192	0.5166	1085.2696	0.5407	NB6_Filter	6
+OMA11	NB7-A_18	NB7	NB7	NB7	CG3	CG3	PopC	Filter	18	forestgreen	forestgreen	23	Single	monoclonal	monoclonal	assemblage	yes	diatom	a	y	y	25264.34667	1.310703644	0.5092	1229.6677	0.535	NB7_Filter	7
+OMA12	NB7-B_18	NB7	NB7	NB7	CG3	CG3	PopC	Filter	18	forestgreen	forestgreen	23	Single	monoclonal	monoclonal	assemblage	yes	diatom	a	y	y	26216.46929	1.49780853	0.5031	1305.1186	0.5276	NB7_Filter	8
+OMA13	NB7-C_18	NB7	NB7	NB7	CG3	CG3	PopC	Filter	18	forestgreen	forestgreen	23	Single	monoclonal	monoclonal	assemblage	yes	diatom	a	y	y	34929.60081	1.470415439	0.4929	1222.9449	0.5194	NB7_Filter	9
+OMA14	RA4-A_18	RA4	RA4	RA4	CG1	CG1	PopA	Filter	18	navy	navy	21	Single	monoclonal	monoclonal	assemblage	no	diatom	a			23219.13638	1.223277194	0.5173	1334.4746	0.5459	RA4_Filter	19
+OMA15	RA4-B_18	RA4	RA4	RA4	CG1	CG1	PopA	Filter	18	navy	navy	21	Single	monoclonal	monoclonal	assemblage	no	diatom	a			24200.2584	1.349554903	0.5206	1456.7229	0.5476	RA4_Filter	20
+OMA16	RA4-C_18	RA4	RA4	RA4	CG1	CG1	PopA	Filter	18	navy	navy	21	Single	monoclonal	monoclonal	assemblage	no	diatom	a				1.15304597	0.5189	1304.84	0.541	RA4_Filter	21
+OMA17	RA5-A_18	RA5	RA5	RA5	CG1	CG1	PopA	Filter	18	navy	navy	22	Single	monoclonal	monoclonal	assemblage	yes	diatom	a		y	27326.51919	0.8699009	0.555	991.79	0.5865	RA5_Filter	22
+OMA18	RA5-B_18	RA5	RA5	RA5	CG1	CG1	PopA	Filter	18	navy	navy	22	Single	monoclonal	monoclonal	assemblage	yes	diatom	a		y	23303.22546	1.0825095	0.5523	1128.0161	0.579	RA5_Filter	23
+OMA19	RA5-C_18	RA5	RA5	RA5	CG1	CG1	PopA	Filter	18	navy	navy	22	Single	monoclonal	monoclonal	assemblage	yes	diatom	a		y	25340.10548	0.8512974	0.5631	1066.6347	0.5924	RA5_Filter	24
+OMA20	RD4-A_18	RD4	RD4	RD4	CG1	CG1	PopA	Filter	18	navy	navy	23	Single	monoclonal	monoclonal	assemblage	yes	diatom	a	y	y	27834.75764	1.065427748	0.4247	1171.1088	0.4434	RD4_Filter	31
+OMA21	RD4-B_18	RD4	RD4	RD4	CG1	CG1	PopA	Filter	18	navy	navy	23	Single	monoclonal	monoclonal	assemblage	yes	diatom	a	y	y		0.946134755	0.4164	1274.2275	0.4387	RD4_Filter	32
+OMA22	RD4-C_18	RD4	RD4	RD4	CG1	CG1	PopA	Filter	18	navy	navy	23	Single	monoclonal	monoclonal	assemblage	yes	diatom	a	y	y	30441.76389	0.967104883	0.4349	1152.8725	0.4622	RD4_Filter	33
+OMA23	YC5-A_18	YC5	YC5	YC5	CG2	CG2	PopB	Filter	18	firebrick	firebrick	21	Single	monoclonal	monoclonal	assemblage	no	diatom	a			1621.036695	1.0769428	0.5446	1367.0458	0.5691	YC5_Filter	43
+OMA24	YC5-B_18	YC5	YC5	YC5	CG2	CG2	PopB	Filter	18	firebrick	firebrick	21	Single	monoclonal	monoclonal	assemblage	no	diatom	a			2139.706347	0.803273	0.5703	885.7646	0.5973	YC5_Filter	44
+OMA25	YC5-C_18	YC5	YC5	YC5	CG2	CG2	PopB	Filter	18	firebrick	firebrick	21	Single	monoclonal	monoclonal	assemblage	no	diatom	a			2214.456536	0.971387	0.5707	1332.1675	0.6032	YC5_Filter	45
+OMA26	YE5-A_18	YE5	YE5	YE5	CG2	CG2	PopB	Filter	18	firebrick	firebrick	22	Single	monoclonal	monoclonal	assemblage	yes	diatom	a		y	32990.38934	1.115189397	0.4284	1302.8045	0.4464	YE5_Filter	46
+OMA27	YE5-B_18	YE5	YE5	YE5	CG2	CG2	PopB	Filter	18	firebrick	firebrick	22	Single	monoclonal	monoclonal	assemblage	yes	diatom	a		y	34573.20094	1.13312713	0.4316	1279.6613	0.4521	YE5_Filter	47
+OMA28	YE5-C_18	YE5	YE5	YE5	CG2	CG2	PopB	Filter	18	firebrick	firebrick	22	Single	monoclonal	monoclonal	assemblage	yes	diatom	a		y	42021.67253	1.080555436	0.4207	1307.5419	0.4479	YE5_Filter	48
+OMA29	RD4-RA5-A_18	RD4_RA5	RD4_RA5	RD4_RA5	Mar_Mar	CG1	multiclonal	Filter	18	blue	black	21	Co	multiclonal	multiclonal	assemblage	yes	diatom			y	28138.00401	1.148851978				RD4_RA5_Filter	55
+OMA30	RD4-RA5-B_18	RD4_RA5	RD4_RA5	RD4_RA5	Mar_Mar	CG1	multiclonal	Filter	18	blue	black	21	Co	multiclonal	multiclonal	assemblage	yes	diatom			y	33057.54073	1.161101606				RD4_RA5_Filter	56
+OMA31	RD4-RA5-C_18	RD4_RA5	RD4_RA5	RD4_RA5	Mar_Mar	CG1	multiclonal	Filter	18	blue	black	21	Co	multiclonal	multiclonal	assemblage	yes	diatom			y	29652.96565	1.000821081				RD4_RA5_Filter	57
+OMA32	RD4-NB7-A_18	RD4_NB7	RD4_NB7	RD4_NB7	Mar_Nov	Mar_Nov	multiclonal	Filter	18	green	black	22	Co	multiclonal	multiclonal	assemblage	yes	diatom			y	39064.65384	1.077087657				RD4_NB7_Filter	58
+OMA33	RD4-NB7-B_18	RD4_NB7	RD4_NB7	RD4_NB7	Mar_Nov	Mar_Nov	multiclonal	Filter	18	green	black	22	Co	multiclonal	multiclonal	assemblage	yes	diatom			y	44241.3263	1.112022855				RD4_NB7_Filter	59
+OMA34	RD4-NB7-C_18	RD4_NB7	RD4_NB7	RD4_NB7	Mar_Nov	Mar_Nov	multiclonal	Filter	18	green	black	22	Co	multiclonal	multiclonal	assemblage	yes	diatom			y	39885.34155	1.222932403				RD4_NB7_Filter	60
+OMA35	RD4-YE5-A_18	RD4_YE5	RD4_YE5	RD4_YE5	Mar_May	Mar_May	multiclonal	Filter	18	orange	black	23	Co	multiclonal	multiclonal	assemblage	yes	diatom			y	40778.12123	1.045397167				RD4_YE5_Filter	67
+OMA36	RD4-YE5-B_18	RD4_YE5	RD4_YE5	RD4_YE5	Mar_May	Mar_May	multiclonal	Filter	18	orange	black	23	Co	multiclonal	multiclonal	assemblage	yes	diatom			y	48330.47025	1.050709417				RD4_YE5_Filter	68
+OMA37	RD4-YE5-C_18	RD4_YE5	RD4_YE5	RD4_YE5	Mar_May	Mar_May	multiclonal	Filter	18	orange	black	23	Co	multiclonal	multiclonal	assemblage	yes	diatom			y	56190.37143	1.023227731				RD4_YE5_Filter	69
+OMA38	Bact-A_22	Bact_22_T5	Bact_T5		env	Bact_T5	Bact_T5	Filter	22	gray70	gray70	25	control	control	control	inoculum_T5	no	control		y							Bact_22_T5_Filter	90
+OMA39	Bact-B_22	Bact_22_T5	Bact_T5		env	Bact_T5	Bact_T5	Filter	22	gray70	gray70	25	control	control	control	inoculum_T5	no	control		y							Bact_22_T5_Filter	91
+OMA40	Bact-C_22	Bact_22_T5	Bact_T5		env	Bact_T5	Bact_T5	Filter	22	gray70	gray70	25	control	control	control	inoculum_T5	no	control		y							Bact_22_T5_Filter	92
+OMA41	NB7-A_22	NB7_22	NB7		CG3	CG3	PopC	Filter	22	green	green	21	Single	monoclonal	monoclonal	assemblage	no	diatom		y		44171.51077	1.848514815				NB7_22_Filter	16
+OMA42	NB7-B_22	NB7_22	NB7		CG3	CG3	PopC	Filter	22	green	green	21	Single	monoclonal	monoclonal	assemblage	no	diatom		y		43722.20885	1.456016724				NB7_22_Filter	17
+OMA43	NB7-C_22	NB7_22	NB7		CG3	CG3	PopC	Filter	22	green	green	21	Single	monoclonal	monoclonal	assemblage	no	diatom		y		43690.45948	1.595387164				NB7_22_Filter	18
+OMA44	RD4-A_22	RD4_22	RD4		CG1	CG1	PopA	Filter	22	blue	blue	21	Single	monoclonal	monoclonal	assemblage	no	diatom		y		32447.44076	1.341886742				RD4_22_Filter	40
+OMA45	RD4-B_22	RD4_22	RD4		CG1	CG1	PopA	Filter	22	blue	blue	21	Single	monoclonal	monoclonal	assemblage	no	diatom		y		31315.7889	1.26532056				RD4_22_Filter	41
+OMA46	RD4-C_22	RD4_22	RD4		CG1	CG1	PopA	Filter	22	blue	blue	21	Single	monoclonal	monoclonal	assemblage	no	diatom		y		36622.00814	1.428627552				RD4_22_Filter	42
+OMA47	Bact-A_T0	Bact_T0	Bact_T0	Bact_T0	COMM_T0	COMM_T0	COMM_T0	Filter_1	NA	black	black	25	NA	NA	NA	inoculum	yes	control									Bact_T0_Filter_1	93
+OMA48	COMM_T0	COMM	Bact_T0	Bact_T0	COMM_T0	COMM_T0	COMM_T0	Filter_1	NA	black	black	25	NA	NA	NA	inoculum	yes	control									COMM_Filter_1	94
+WGA3	WGA_RA5-A	RA5	RA5	RA5_WGA	March	CG1	PopA	WGA	18	steelblue4	steelblue4	22	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						RA5_WGA	25
+WGA4	WGA_RA4-A	RA5	RA5	RA5_WGA	March	CG1	PopA	WGA	18	steelblue4	steelblue4	22	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						RA5_WGA	26
+WGA5	WGA_RA5-A	RA5	RA5	RA5_WGA	March	CG1	PopA	WGA	18	steelblue4	steelblue4	22	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						RA5_WGA	27
+WGA7	WGA_RA5-A_Blank	RA5_Blank	RA5_Blank	RA5_Blank	March	Bact_CG1	Bact_PopA	WGA	18	steelblue4	steelblue4	24	Single	monoclonal	control	bacterioplankton	yes	control			y						RA5_Blank_WGA	76
+WGA10	WGA_RA5-B	RA5	RA5	RA5_WGA	March	CG1	PopA	WGA	18	steelblue4	steelblue4	22	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						RA5_WGA	28
+WGA12	WGA_RA5-B	RA5	RA5	RA5_WGA	March	CG1	PopA	WGA	18	steelblue4	steelblue4	22	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						RA5_WGA	29
+WGA13	WGA_RA5-B	RA5	RA5	RA5_WGA	March	CG1	PopA	WGA	18	steelblue4	steelblue4	22	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						RA5_WGA	30
+WGA15	WGA-RA5-B_Blank	RA5_Blank	RA5_Blank	RA5_Blank	March	Bact_CG1	Bact_PopA	WGA	18	steelblue4	steelblue4	24	Single	monoclonal	control	bacterioplankton	yes	control			y						RA5_Blank_WGA	77
+WGA18	WGA_RD4-A	RD4	RD4	RD4_WGA	March	CG1	PopA	WGA	18	navy	navy	23	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						RD4_WGA	34
+WGA19	WGA_RD4-A	RD4	RD4	RD4_WGA	March	CG1	PopA	WGA	18	navy	navy	23	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						RD4_WGA	35
+WGA20	WGA_RD4-A	RD4	RD4	RD4_WGA	March	CG1	PopA	WGA	18	navy	navy	23	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						RD4_WGA	36
+WGA23	WGA_RD4-A_BLANK	RD4_Blank	RD4_Blank	RD4_Blank	RD4_Blank	Bact_CG1	Bact_PopA	WGA	18	navy	navy	24	Single	monoclonal	control	bacterioplankton	yes	control			v						RD4_Blank_WGA	79
+WGA25	WGA_RD4-B	RD4	RD4	RD4_WGA	March	CG1	PopA	WGA	18	navy	navy	23	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						RD4_WGA	37
+WGA26	WGA_RD4-B	RD4	RD4	RD4_WGA	March	CG1	PopA	WGA	18	navy	navy	23	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						RD4_WGA	38
+WGA27	WGA_RD4-B	RD4	RD4	RD4_WGA	March	CG1	PopA	WGA	18	navy	navy	23	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						RD4_WGA	39
+WGA29	WGA_RD4-B_BLANK	RD4_Blank	RD4_Blank	RD4_Blank	RD4_Blank	Bact_CG1	Bact_PopA	WGA	18	navy	navy	24	Single	monoclonal	control	bacterioplankton	yes	control			y						RD4_Blank_WGA	78
+WGA32	WGA_NB7-A	NB7	NB7	NB7_WGA	November	CG3	PopC	WGA	18	forestgreen	forestgreen	23	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						NB7_WGA	10
+WGA33	WGA_NB7-A	NB7	NB7	NB7_WGA	November	CG3	PopC	WGA	18	forestgreen	forestgreen	23	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						NB7_WGA	11
+WGA34	WGA_NB7-A	NB7	NB7	NB7_WGA	November	CG3	PopC	WGA	18	forestgreen	forestgreen	23	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						NB7_WGA	12
+WGA35	WGA_NB7-A_BLANK	NB7_Blank	NB7_Blank	NB7_Blank	NB7_Blank	Bact_CG3	Bact_PopC	WGA	18	forestgreen	forestgreen	24	Single	monoclonal	control	bacterioplankton	yes	control			y						NB7_Blank_WGA	80
+WGA39	WGA_NB7-B	NB7	NB7	NB7_WGA	November	CG3	PopC	WGA	18	forestgreen	forestgreen	23	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						NB7_WGA	13
+WGA40	WGA_NB7-B	NB7	NB7	NB7_WGA	November	CG3	PopC	WGA	18	forestgreen	forestgreen	23	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						NB7_WGA	14
+WGA41	WGA_NB7-B	NB7	NB7	NB7_WGA	November	CG3	PopC	WGA	18	forestgreen	forestgreen	23	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						NB7_WGA	15
+WGA42	WGA_NB7-B_BLANK	NB7_Blank	NB7_Blank	NB7_Blank	NB7_Blank	Bact_CG3	Bact_PopC	WGA	18	forestgreen	forestgreen	24	Single	monoclonal	control	bacterioplankton	yes	control			y						NB7_Blank_WGA	81
+WGA45	WGA_YE5-A	YE5	YE5	YE5_WGA	May	CG2	PopB	WGA	18	firebrick	firebrick	22	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						YE5_WGA	49
+WGA46	WGA_YE5-A	YE5	YE5	YE5_WGA	May	CG2	PopB	WGA	18	firebrick	firebrick	22	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						YE5_WGA	50
+WGA48	WGA_YE5-A	YE5	YE5	YE5_WGA	May	CG2	PopB	WGA	18	firebrick	firebrick	22	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						YE5_WGA	51
+WGA50	WGA_YE5-A_BLANK	YE5_Blank	YE5_Blank	YE5_Blank	YE5_Blank	Bact_CG2	Bact_PopB	WGA	18	firebrick	firebrick	24	Single	monoclonal	control	bacterioplankton	yes	control			y						YE5_Blank_WGA	82
+WGA53	WGA_YE5-B	YE5	YE5	YE5_WGA	May	CG2	PopB	WGA	18	firebrick	firebrick	22	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						YE5_WGA	52
+WGA54	WGA_YE5-B	YE5	YE5	YE5_WGA	May	CG2	PopB	WGA	18	firebrick	firebrick	22	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						YE5_WGA	53
+WGA55	WGA_YE5-B	YE5	YE5	YE5_WGA	May	CG2	PopB	WGA	18	firebrick	firebrick	22	Single	monoclonal	monoclonal	microbiome	yes	diatom			y						YE5_WGA	54
+WGA56	WGA_YE5-B_Blank	YE5_Blank	YE5_Blank	YE5_Blank	May	Bact_CG2	Bact_PopB	WGA	18	firebrick	firebrick	24	Single	monoclonal	control	bacterioplankton	yes	control			y						YE5_Blank_WGA	83
+WGA97	WGA_RD4-NB7-A	RD4_NB7	RD4_NB7	RD4_NB7_WGA	Mar_Nov	Mar_Nov	multiclonal	WGA	18	green	black	22	Co	multiclonal	multiclonal	microbiome	yes	diatom			y						RD4_NB7_WGA	61
+WGA98	WGA_RD4-NB7-A	RD4_NB7	RD4_NB7	RD4_NB7_WGA	Mar_Nov	Mar_Nov	multiclonal	WGA	18	green	black	22	Co	multiclonal	multiclonal	microbiome	yes	diatom			y						RD4_NB7_WGA	62
+WGA99	WGA_RD4-NB7-A	RD4_NB7	RD4_NB7	RD4_NB7_WGA	Mar_Nov	Mar_Nov	multiclonal	WGA	18	green	black	22	Co	multiclonal	multiclonal	microbiome	yes	diatom			y						RD4_NB7_WGA	63
+WGA100	WGA_RD4-NB7-A	RD4_NB7	RD4_NB7	RD4_NB7_WGA	Mar_Nov	Mar_Nov	multiclonal	WGA	18	green	black	22	Co	multiclonal	multiclonal	microbiome	yes	diatom			y						RD4_NB7_WGA	64
+WGA106	WGA_RD4-NB7-A	RD4_NB7	RD4_NB7	RD4_NB7_WGA	Mar_Nov	Mar_Nov	multiclonal	WGA	18	green	black	22	Co	multiclonal	multiclonal	microbiome	yes	diatom			y						RD4_NB7_WGA	65
+WGA108	WGA_RD4-NB7-A	RD4_NB7	RD4_NB7	RD4_NB7_WGA	Mar_Nov	Mar_Nov	multiclonal	WGA	18	green	black	22	Co	multiclonal	multiclonal	microbiome	yes	diatom			y						RD4_NB7_WGA	66
+WGA111	WGA_RD4-NB7-A_BLANK	RD4_NB7_Blank	RD4_NB7_Blank	RD4_NB7_Blank	RD4_NB7	RD4_NB7	Bact_multiclonal	WGA	18	black	black	24	Co	multiclonal	control	bacterioplankton	yes	control			y						RD4_NB7_Blank_WGA	84
+WGA132	WGA_RD4-YE5-A	RD4_YE5	RD4_YE5	RD4_YE5_WGA	Mar_May	Mar_May	multiclonal	WGA	18	orange	black	23	Co	multiclonal	multiclonal	microbiome	yes	diatom			y						RD4_YE5_WGA	70
+WGA133	WGA_RD4-YE5-A	RD4_YE5	RD4_YE5	RD4_YE5_WGA	Mar_May	Mar_May	multiclonal	WGA	18	orange	black	23	Co	multiclonal	multiclonal	microbiome	no	diatom			y						RD4_YE5_WGA	71
+WGA137	WGA_RD4-YE5-A	RD4_YE5	RD4_YE5	RD4_YE5_WGA	Mar_May	Mar_May	multiclonal	WGA	18	orange	black	23	Co	multiclonal	multiclonal	microbiome	yes	diatom			y						RD4_YE5_WGA	72
+WGA139	WGA_RD4-YE5-A	RD4_YE5	RD4_YE5	RD4_YE5_WGA	Mar_May	Mar_May	multiclonal	WGA	18	orange	black	23	Co	multiclonal	multiclonal	microbiome	yes	diatom			y						RD4_YE5_WGA	73
+WGA143	WGA_RD4-YE5-A	RD4_YE5	RD4_YE5	RD4_YE5_WGA	Mar_May	Mar_May	multiclonal	WGA	18	orange	black	23	Co	multiclonal	multiclonal	microbiome	yes	diatom			y						RD4_YE5_WGA	74
+WGA145	WGA_RD4-YE5-A	RD4_YE5	RD4_YE5	RD4_YE5_WGA	Mar_May	Mar_May	multiclonal	WGA	18	orange	black	23	Co	multiclonal	multiclonal	microbiome	yes	diatom			y						RD4_YE5_WGA	75
+WGA146	WGA_RD4-YE5-A_BLANK	RD4_YE5_Blank	RD4_YE5_Blank	RD4_YE5_Blank	RD4_YE5_Blank	RD4_YE5_Blank	Bact_multiclonal	WGA	18	black 	black 	24	Co	multiclonal	control	bacterioplankton	yes	control			y						RD4_YE5_Blank_WGA	85
