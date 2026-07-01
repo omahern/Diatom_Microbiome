@@ -30,6 +30,7 @@ library(microbiome)
 library(ape)
 library(rstatix)
 library(ggpubr)
+library(MicEco)
 ```
 
 
@@ -448,6 +449,28 @@ mean_ra5=as.numeric(subset(mean, Group.1=="NB7")[,2:6])
   legend("bottomright", legend=c("xenic",'axenic'), pch=21, pt.bg=c('grey','white'), bty='n')
   
   }
+
+```
+
+```{r}
+
+read=read.csv(file="datafiles/bact_growth.csv",header=T)
+bact1=subset(read,treat !="Bact" )
+
+
+bact11=mean(bact1$X3)
+bact12=mean(bact1$X4)
+
+read=read.csv(file='datafiles/rotula_cellcounts.csv',header=T)
+xen=subset(read, bacteria=="xenic")
+
+xen
+
+mean1=mean(xen$X3)
+mean2=mean(xen$X4)
+
+bact11/mean1
+bact12/mean2
 
 ```
 
@@ -927,13 +950,16 @@ cg = phyloseq(OTU, map,tax2,tree)
 #cg_filt=subset_samples(cg, keep_2026 =='yes')
 
 cg
+cg=subset_samples(cg, keep_2026 =='yes')
+
 phyo1 = subset_taxa(cg, !phyla=="Cyanobacteria/Chloroplast")
+colSums(otu_table(phyo1))
+
 cg=phyo1
 is.rooted(phy_tree(cg))
 
 cg_filt=subset_samples(cg, keep_2026 =='yes')
-
-#physeq_filtered <- prune_taxa(taxa_sums(cg_filt) > 0, cg_filt)
+physeq_filtered <- prune_taxa(taxa_sums(cg_filt) > 2, cg_filt)
 
 
 ```
@@ -1060,6 +1086,89 @@ ggplot(spec_bar,aes(x=treatment, y=mean1)) +
 
 ```
 
+
+### figure 1 - no control 
+```{r}
+cg_filt2=subset_samples(cg_filt, definition !="bacterioplankton")
+cg_filt3=subset_samples(cg_filt2, diatom_control !="control")
+cg_filt2=cg_filt3
+s=specnumber(t(otu_table(cg_filt2)))
+
+
+boxplot((s)~sample_data(cg_filt2)$treatment_26.1, las=2, xlab="", log='y')
+treat2=sample_data(cg_filt2)$treatment_26.1
+
+spec=cbind(s, treat2)
+spec2=data.frame(spec)
+
+spec2
+#mean1=aggregate(as.numeric(s) ~ treat3, data = spec2, FUN=mean)
+mean1=with(spec2, tapply(as.numeric(s), treat2, mean))
+sd1=with(spec2, tapply(as.numeric(s), treat2, sd))
+
+treatment=names(sd1)
+spec_bar=cbind(mean1, sd1)
+spec_bar=data.frame(spec_bar)
+spec_bar$treatment=treatment
+
+custom_order =c( "A1 Coculture","A1 Algal-cell associated", 
+                 "A2 Coculture","A2 Algal-cell associated",
+                 "B1 Coculture","B1 Algal-cell associated",
+                 "C1 Coculture","C1 Algal-cell associated")  
+spec_bar$treatment2=spec_bar$treatment
+spec_bar$treatment2 <- factor(spec_bar$treatment2, levels = custom_order)
+spec_bar$treatment2=spec_bar$treatment
+spec_bar$treatment2 <- factor(spec_bar$treatment2, levels = custom_order)
+
+spec_bar$treatment_ag=spec_bar$treatment
+spec_bar$treatment_ag=as.factor((spec_bar$treatment_ag))
+levels(spec_bar$treatment_ag)=c("Algal-cell associated","Coculture", "Algal-cell associated","Coculture", "Algal-cell associated","Coculture", "Algal-cell associated", "Coculture")
+spec_bar <- spec_bar %>%
+  mutate(treatment_ag = fct_rev(factor(treatment_ag)))
+
+spec_bar$name=spec_bar$treatment
+spec_bar$name=as.factor((spec_bar$name))
+levels(spec_bar$name)=c("A1", "A1", "A2", "A2", "B1", "B1", "C1", "C1")
+
+values_colb=c( "#4D9DE0", '#E15554', '#3BB273', "#7768AE", "#4D9DE0", '#E15554', '#3BB273', "#7768AE")
+
+values_colb=c( "#E64B35", "#4DBBD5", "#00A087", "#3C5488","#E64B35", "#4DBBD5", "#00A087", "#3C5488")
+
+
+values_colb=c("#631879", "#3B4992", "#EE0000", "#008B45", "#631879", "#3B4992", "#EE0000", "#008B45")
+
+
+## log which i like 
+ggplot(spec_bar,aes(x=name, y=mean1)) +
+  geom_bar( aes(x=name, y=mean1), stat="identity", fill=values_colb, alpha=0.7) +
+    geom_errorbar( aes(x=name, ymin=mean1-sd1, ymax=mean1+sd1), width=0.4, colour="black", alpha=0.9, size=.7) +
+  xlab(" ") +
+  ylab("Species Richness") +
+#  coord_flip() +
+  facet_wrap(~treatment_ag, scales='free_x') +
+  theme_classic(base_size=14) +
+ scale_y_continuous(trans = 'log10') +
+    theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=12)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+
+
+ggplot(spec_bar,aes(x=name, y=mean1)) +
+  geom_bar( aes(x=name, y=mean1), stat="identity", fill=values_colb, alpha=0.7) +
+    geom_errorbar( aes(x=name, ymin=mean1-sd1, ymax=mean1+sd1), width=0.4, colour="black", alpha=0.9, size=.7) +
+  xlab(" ") +
+  ylab("Species Richness") +
+#  coord_flip() +
+  facet_wrap(~treatment_ag, scales='free') +
+  theme_classic() +
+# scale_y_continuous(trans = 'log10') +
+    theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+
+```
+
+
 ### spcies barplot 2 USED
 ```{r}
 cg_filter=subset_samples(cg_filt,definition=="microbiome")
@@ -1139,7 +1248,58 @@ p <- ggplot(df_melt, aes(x = Sample, y = Abundance, fill = family)) +
 theme(axis.text.x = element_text(angle=90, size=10), legend.position = 'bottom') 
 p
 ```
-# circos ?
+
+
+
+
+
+# Figure 2 barplot
+```{r}
+cg_filter=subset_samples(cg_filt,diatom_control=="diatom")
+glom=tax_glom(cg_filter, "species")
+
+abund=transform_sample_counts(glom, function(x) (x/sum(x)))
+
+ps_filtered=ps_prune(abund, min.samples = 0, min.reads = 0, min.abundance = 0.015)
+
+# 3. Melt the filtered data
+df_melt <- psmelt(ps_filtered)
+summary(as.factor(df_melt$species))
+
+sub1=subset(df_melt, Sample == "WGA18")
+sub1[,26:29]
+
+colors=c(
+'Aestuariibacter' ="#e59d97",
+'Aquibacter' ="#ffcaa5",
+'Candidatus Pelagibacter' ="#e9daa2",
+'Cellulophaga' ="#afb780",
+'Marinobacterium' ="#f8fff1",
+'Marinomonas' ="#8fc49b",
+'Neptuniibacter' ="#93efe7",
+'Owenweeksia' ="#ada5d9",
+'Tenacibaculum' ="#f5e4ff",
+'Vibrio' ="#ffc9e2",
+'Wandonia' ="#c6a2ae",
+'NA' ='white')
+
+
+df_melt <- df_melt %>%
+  mutate(definition_26 = fct_rev(factor(definition_26)))
+
+#phy_df <- psmelt(abund)
+p <- ggplot(df_melt, aes(x = Sample, y = Abundance, fill = species)) +
+  theme_classic(base_size = 12) +
+  xlab(" ") +
+  ylab(" Relative Abundance") +
+    facet_grid(~strain_26+definition_26,scales = "free", space="free") +
+  geom_bar(stat = "identity",linewidth=0.3, color='black') +
+  scale_fill_manual(values=colors) +
+theme(axis.text.x = element_text(angle=90, size=10), legend.position = 'left') 
+p
+```
+
+# circos (bad)
 ```{r}
 library(MiscMetabar)
 ?circle_pq
@@ -1190,7 +1350,195 @@ circle_pq(subset_family, fact="treatment_26", taxa = "family",
 
 ```
 
+```{r}
 
+try1=subset_samples(cg_filt2, Treatment3!="Bact_T0_filtered")
+try1=subset_samples(try1, Treatment3!="Bact_T0")
+try1=subset_samples(try1, treatment_26!="Bacteria Control T5")
+
+row_colors=c( "#4D9DE0", "#4D9DE0","#E15554", "#E15554","#3BB273", "#3BB273", "#7768AE", "#7768AE")
+
+palette_genus=c('Aestuariibacter' ="#e59d97",
+'Aquibacter' ="#ffcaa5",
+'Candidatus Pelagibacter' ="#e9daa2",
+'Cellulophaga' ="#afb780",
+'Marinobacterium' ="#f8fff1",
+'Marinomonas' ="#8fc49b",
+'Neptuniibacter' ="#93efe7",
+'Owenweeksia' ="#ada5d9",
+'Tenacibaculum' ="#f5e4ff",
+'Vibrio' ="#ffc9e2",
+'Wandonia' ="#c6a2ae",
+
+"NbO-A5 BA" = "#4D9DE0",
+"NbO-A5 Micro" = "#4D9DE0",
+"NbO-D4 BA" = "#E15554",
+"NbO-D4 Micro" = "#E15554",
+"NbP-YE5 BA" = "#3BB273",
+"NbP-YE5 Micro" = "#3BB273",
+"NbQ-B7 BA" = "#7768AE",
+"NbQ-B7 Micro" = "#7768AE")
+
+abund=transform_sample_counts(try1, function(x) (x/sum(x)))
+
+subset_family = subset_taxa(try1, family %in% c("Flavobacteriales", "Oceanospirillales", "Alteromonadales", "Vibrionales", "SAR 11") )
+subset_family = subset_taxa(try1, species %in% c("Aestuariibacter","Aquibacter","Candidatus Pelagibacter","Cellulophaga","Marinobacterium","Marinomonas","Neptuniibacter","Owenweeksia","Tenacibaculum","Vibrio","Wandonia") )
+
+circle_pq(subset_family, fact="treatment_26", taxa = "species",
+          min_prop_mod=0.001, min_prop_tax=0.015,  add_nb_seq=TRUE, grid_col=palette1, row_col = row_colors, log10trans = FALSE, rarefy=TRUE)
+
+circle_pq(subset_family, fact="treatment_26", taxa = "species",
+          min_prop_tax=0.015,  add_nb_seq=TRUE, grid_col=palette1, row_col = row_colors, log10trans = FALSE, rarefy=TRUE)
+
+
+
+```
+
+
+```{r}
+
+try1=subset_samples(cg_filt2, Treatment3!="Bact_T0_filtered")
+try1=subset_samples(try1, Treatment3!="Bact_T0")
+try1=subset_samples(try1, treatment_26!="Bacteria Control T5")
+
+row_colors=c( "#4D9DE0", "#4D9DE0","#E15554", "#E15554","#3BB273", "#3BB273", "#7768AE", "#7768AE")
+
+palette_genus=c('Aestuariibacter' ="#e59d97",
+'Aquibacter' ="#ffcaa5",
+'Candidatus Pelagibacter' ="#e9daa2",
+'Cellulophaga' ="#afb780",
+'Marinobacterium' ="#f8fff1",
+'Marinomonas' ="#8fc49b",
+'Neptuniibacter' ="#93efe7",
+'Owenweeksia' ="#ada5d9",
+'Tenacibaculum' ="#f5e4ff",
+'Vibrio' ="#ffc9e2",
+'Wandonia' ="#c6a2ae",
+
+"NbO-A5" = "#4D9DE0",
+"NbO-D4" = "#E15554",
+"NbP-YE5" = "#3BB273",
+"NbQ-B7" = "#7768AE")
+
+
+subset_family = subset_taxa(try1, species %in% c("Aestuariibacter","Aquibacter","Candidatus Pelagibacter","Cellulophaga","Marinobacterium","Marinomonas","Neptuniibacter","Owenweeksia","Tenacibaculum","Vibrio","Wandonia") )
+row_colors=c( "#4D9DE0","#E15554",  "#3BB273", "#7768AE")
+subset_family_co=subset_samples(subset_family, definition=="assemblage")
+circle_pq(subset_family_co, fact="diatom_strain", taxa = "species",
+          min_prop_mod=0.001, min_prop_tax=0.015,  add_nb_seq=TRUE, grid_col=palette1, row_col = row_colors, log10trans = FALSE, rarefy=TRUE)
+
+circle_pq(subset_family_co, fact="diatom_strain", taxa = "species",
+          min_prop_tax=0.015,  add_nb_seq=TRUE, grid_col=palette1, row_col = palette_genus, log10trans = FALSE, rarefy=TRUE)
+
+
+subset_family_micro=subset_samples(subset_family, definition=="microbiome")
+circle_pq(subset_family_micro, fact="diatom_strain", taxa = "species",
+          min_prop_mod=0.001, min_prop_tax=0.015,  add_nb_seq=TRUE, grid_col=palette1, row_col = row_colors, log10trans = FALSE, rarefy=TRUE)
+
+
+```
+
+
+### subset circos 
+```{r}
+
+try1=subset_samples(cg_filt2, Treatment3!="Bact_T0_filtered")
+try1=subset_samples(try1, Treatment3!="Bact_T0")
+try1=subset_samples(try1, treatment_26!="Bacteria Control T5")
+
+row_colors=c( "#4D9DE0", "#4D9DE0","#E15554", "#E15554","#3BB273", "#3BB273", "#7768AE", "#7768AE")
+
+palette_genus=c('Aestuariibacter' ="#e59d97",
+'Aquibacter' ="#ffcaa5",
+'Candidatus Pelagibacter' ="#e9daa2",
+'Cellulophaga' ="#afb780",
+'Marinobacterium' ="#f8fff1",
+'Marinomonas' ="#8fc49b",
+'Neptuniibacter' ="#93efe7",
+'Owenweeksia' ="#ada5d9",
+'Tenacibaculum' ="#f5e4ff",
+'Vibrio' ="#ffc9e2",
+'Wandonia' ="#c6a2ae",
+"NbO-A5" = "#4D9DE0",
+"NbO-D4" = "#E15554",
+"NbP-YE5" = "#3BB273",
+"NbQ-B7" = "#7768AE")
+
+
+subset_family = subset_taxa(try1, species %in% c("Aestuariibacter","Aquibacter","Candidatus Pelagibacter","Cellulophaga","Marinobacterium","Marinomonas","Neptuniibacter","Owenweeksia","Tenacibaculum","Vibrio","Wandonia") )
+subset_family=try1
+row_colors=c( "#4D9DE0","#E15554",  "#3BB273", "#7768AE")
+subset_family_co=subset_samples(subset_family, definition=="assemblage")
+abund=transform_sample_counts(subset_family_co, function(x) (x/sum(x)))
+abund_1 = subset_taxa(abund, species %in% c("Aestuariibacter","Aquibacter","Candidatus Pelagibacter","Cellulophaga","Marinobacterium","Marinomonas","Neptuniibacter","Owenweeksia","Tenacibaculum","Vibrio","Wandonia") )
+circle_pq(abund1, fact="diatom_strain", taxa = "species",
+          min_prop_tax=0.015,  add_nb_seq=TRUE, grid_col=palette_genus, row_col = row_colors, log10trans = FALSE, rarefy=FALSE)
+
+
+circle_pq(subset_family_co, fact="diatom_strain", taxa = "species",
+        min_prop_tax=0.015,  add_nb_seq=TRUE, grid_col=palette_genus, row_col = row_colors, log10trans = FALSE, rarefy=TRUE)
+
+
+
+circle_pq(abund, fact="diatom_strain", taxa = "species",
+          min_prop_tax=0.015,  add_nb_seq=TRUE, grid_col=palette1, row_col = row_colors, log10trans = FALSE, rarefy=FALSE)
+
+
+subset_family_micro=subset_samples(subset_family, definition=="microbiome")
+circle_pq(subset_family_micro, fact="diatom_strain", taxa = "species",
+          min_prop_mod=0.001, min_prop_tax=0.10,  add_nb_seq=TRUE, grid_col=palette_genus, row_col = row_colors, log10trans = FALSE, rarefy=TRUE)
+subset_family_micro=subset_samples(subset_family, definition=="microbiome")
+abund=transform_sample_counts(subset_family_micro, function(x) (x/sum(x)))
+
+circle_pq(abund, fact="diatom_strain", taxa = "species",
+          min_prop_tax=0.015,  add_nb_seq=TRUE, grid_col=palette_genus, row_col = row_colors, log10trans = FALSE, rarefy=FALSE)
+abund_1 = subset_taxa(abund, species %in% c("Aestuariibacter","Aquibacter","Candidatus Pelagibacter","Cellulophaga","Marinobacterium","Marinomonas","Neptuniibacter","Owenweeksia","Tenacibaculum","Vibrio","Wandonia") )
+circle_pq(abund_1, fact="diatom_strain", taxa = "species",
+          min_prop_tax=0.05,  add_nb_seq=TRUE, grid_col=palette_genus, row_col = row_colors, log10trans = FALSE, rarefy=FALSE)
+
+
+```
+
+
+```{r circos}
+
+try1=subset_samples(cg_filt2, Treatment3!="Bact_T0_filtered")
+try1=subset_samples(try1, Treatment3!="Bact_T0")
+try1=subset_samples(try1, treatment_26!="Bacteria Control T5")
+
+## colors
+palette_genus=c('Aestuariibacter' ="#e59d97",
+'Aquibacter' ="#ffcaa5",
+'Candidatus Pelagibacter' ="#e9daa2",
+'Cellulophaga' ="#afb780",
+'Marinobacterium' ="#f8fff1",
+'Marinomonas' ="#8fc49b",
+'Neptuniibacter' ="#93efe7",
+'Owenweeksia' ="#ada5d9",
+'Tenacibaculum' ="#f5e4ff",
+'Vibrio' ="#ffc9e2",
+'Wandonia' ="#c6a2ae",
+"NbO-A5" = "#4D9DE0",
+"NbO-D4" = "#E15554",
+"NbP-YE5" = "#3BB273",
+"NbQ-B7" = "#7768AE")
+row_colors=c( "#4D9DE0","#E15554",  "#3BB273", "#7768AE")
+
+## unattached bacteria
+
+subset_family_co=subset_samples(try1, definition=="assemblage")
+abund=transform_sample_counts(subset_family_co, function(x) (x/sum(x)))
+abund_1 = subset_taxa(subset_family_co, species %in% c("Aestuariibacter","Aquibacter","Candidatus Pelagibacter","Cellulophaga","Marinobacterium","Marinomonas","Neptuniibacter","Owenweeksia","Tenacibaculum","Vibrio","Wandonia") )
+circle_pq(abund_1, fact="diatom_strain", taxa = "species",
+            add_nb_seq=TRUE, grid_col=palette_genus, row_col = row_colors, log10trans = FALSE, rarefy=TRUE)
+
+## attached bacteria
+subset_family_micro=subset_samples(try1, definition=="microbiome")
+#abund=transform_sample_counts(subset_family_micro, function(x) (x/sum(x)))
+abund_1 = subset_taxa(subset_family_micro, species %in% c("Aestuariibacter","Aquibacter","Candidatus Pelagibacter","Cellulophaga","Marinobacterium","Marinomonas","Neptuniibacter","Owenweeksia","Tenacibaculum","Vibrio","Wandonia") )
+circle_pq(abund_1, fact="diatom_strain", taxa = "species",
+           add_nb_seq=TRUE, grid_col=palette_genus, row_col = row_colors, log10trans = FALSE, rarefy=TRUE)
+```
 # nst
 ```{r}
 
@@ -1459,7 +1807,7 @@ ordiellipse(p$x,
 
 ```
 
-### pcoa
+### pcoa (yes)
 
 ```{r vst-4, message=FALSE, error=FALSE, warning=FALSE}
 otu2=otu_table(comp_clr)
@@ -1542,8 +1890,10 @@ ordiellipse(p$x,
 
 ```
 
-### pcoa
+### pcoa (yes)
 ```{r vst-6, message=FALSE, error=FALSE, warning=FALSE}
+
+
 otu2=otu_table(comp_clr)
 euc=phyloseq::distance(t(otu2),'euclidean')
 p=prcomp(euc,scale=T,center=T)
@@ -1579,6 +1929,131 @@ legend(-2, -5,
 
 
 ```
+
+
+## used for figure 2
+
+### pcoa of just cocultures
+```{r vst-6, message=FALSE, error=FALSE, warning=FALSE}
+
+library(CoDaSeq)
+library(DESeq2)
+cg_filt2=subset_samples(cg_filt, definition_26 =='Coculture')
+########################################################################
+# variance stabilizing transformation 
+# from 16S stats 
+ddst=phyloseq_to_deseq2(cg_filt2,~Treatment3)
+# 
+gm_mean = function(x, na.rm=TRUE){
+  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+}
+trial.deseq=estimateSizeFactors(ddst,geoMeans = apply(counts(ddst), 1, gm_mean))
+data.vst <- DESeq2::varianceStabilizingTransformation(trial.deseq, blind = T)
+# Apply variance stabilizing transformation
+# Extract transformed OTU table
+fieldEco.vstMat <- assay(data.vst)
+# And put into my phloseq object
+OTU = otu_table(fieldEco.vstMat, taxa_are_rows=T)
+comp_vst=phyloseq(OTU,map,tax2,tree)
+comp_clr=comp_vst
+########################################################################
+
+otu2=otu_table(comp_clr)
+euc=phyloseq::distance(t(otu2),'euclidean')
+p=prcomp(euc,scale=T,center=T)
+# summary(p)
+
+values_colb=c("#631879", "#3B4992", "#EE0000", "#008B45", "#631879", "#3B4992", "#EE0000", "#008B45")
+
+palette=c("#631879", "#3B4992", "#EE0000", "#008B45")
+
+{
+  
+  par(mar=c(10,
+            5,1,1),xpd=FALSE)
+  plot(p$x[,1],p$x[,2],pch=21,cex=2,
+     bg=c("#008B45", "#008B45", "#008B45", '#631879',"#631879","#631879", '#3B4992', "#3B4992", "#3B4992", '#EE0000', "#EE0000", "#EE0000"),
+     xlab = "PCoA1 26.94 %",
+     ylab= "PCoA2 16.00 %",
+     yaxt='n')
+  axis(2, at=c(-2,0,2))
+ordiellipse(p$x,
+          group=as.factor(sample_data(comp_clr)$strain_26),
+           col=c('#631879', '#3B4992', '#EE0000','#008B45'),
+
+     #     col=c('navy', 'firebrick', 'forestgreen','black'),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+
+}
+
+
+```
+
+
+### pcoa of microbiomes
+
+```{r vst-4, message=FALSE, error=FALSE, warning=FALSE}
+library(CoDaSeq)
+library(DESeq2)
+cg_filt2=subset_samples(cg_filt, definition_26 =='Algal-cell associated')
+########################################################################
+# variance stabilizing transformation 
+# from 16S stats 
+ddst=phyloseq_to_deseq2(cg_filt2,~strain_26)
+# 
+gm_mean = function(x, na.rm=TRUE){
+  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+}
+trial.deseq=estimateSizeFactors(ddst,geoMeans = apply(counts(ddst), 1, gm_mean))
+data.vst <- DESeq2::varianceStabilizingTransformation(trial.deseq, blind = T)
+# Apply variance stabilizing transformation
+# Extract transformed OTU table
+fieldEco.vstMat <- assay(data.vst)
+# And put into my phloseq object
+OTU = otu_table(fieldEco.vstMat, taxa_are_rows=T)
+comp_vst=phyloseq(OTU,map,tax2,tree)
+comp_clr=comp_vst
+
+########################################################################
+
+otu2=otu_table(comp_clr)
+euc=phyloseq::distance(t(otu2),'euclidean')
+p=prcomp(euc)
+summary(p)
+# anosim(euc, grouping=as.factor(sample_data(comp_clr)$Pop3))
+# anosim(euc, grouping=as.factor(sample_data(comp_clr)$diatom_control))
+
+{
+  
+  par(mar=c(15,
+            5,1,1),xpd=FALSE)
+  plot(p$x[,1],p$x[,2],pch=23, cex=2,
+     bg=sample_data(comp_clr)$col_26,
+     xlab = "PCoA1 36 %",
+     ylab= "PCoA2 11 %", 
+     yaxt='n', xaxt='n')
+ordiellipse(p$x,
+          group=as.factor(sample_data(comp_clr)$strain_26),
+           kind ='sd',conf=0.8,
+           label=TRUE)
+
+}
+
+anosim(euc, grouping=as.factor(sample_data(comp_clr)$treatment_26))
+adonis2(euc~as.factor(sample_data(comp_clr)$treatment_26))
+
+# cg_filta=subset_samples(comp_clr, clonal=='monoclonal')
+# otu2=otu_table(cg_filta)
+# euc=phyloseq::distance(t(otu2),'euclidean')
+# anosim(euc, grouping=as.factor(sample_data(cg_filta)$Pop3))
+# anosim(euc, grouping=as.factor(sample_data(cg_filta)$Pop3))
+# adonis2(euc~as.factor(sample_data(cg_filta)$Pop3))
+
+```
+
+
+
 
 ## assemblages with control 
 ```{r vst-7, message=FALSE, error=FALSE, warning=FALSE}

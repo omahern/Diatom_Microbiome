@@ -1,0 +1,1853 @@
+---
+title: "CoGrowth"
+output: 
+  html_document:
+    keep_md: true
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    code_folding: hide
+    number_sections: false
+    theme: lumen
+
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+---
+# workplace setup
+```{r setup, message=FALSE, error=FALSE, warning=FALSE}
+library(Hmisc)
+library(vegan)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(phyloseq)
+library(ape)
+library(ggpubr)
+library(microbiome)
+library(ape)
+library(rstatix)
+library(ggpubr)
+library(MicEco)
+```
+
+
+# Physiology
+## Growth Rates
+### Bacteria 
+```{r bact-1, message=FALSE, error=FALSE, warning=FALSE}
+read<-read.csv(file="datafiles/Bact_Growth_rates.csv",
+               header=T,row.names=1)
+
+boxplot(read$Growth~read$Geno)
+a=aov(read$Growth~read$Geno)
+summary(a)
+tuk=TukeyHSD(a)
+plot(tuk,las=2)
+
+boxplot(read$Growth~read$Pop)
+a=aov(read$Growth~read$Pop)
+summary(a)
+tuk=TukeyHSD(a)
+plot(tuk,las=2)
+
+
+```
+
+### Diatoms 
+
+
+### used 11 February 
+
+```{r fcm-growth-2, dpi=300, width=5,height=6,message=FALSE, error=FALSE, warning=FALSE}
+read<-read.csv(file="datafiles/TR_Growth_rates_Feb16.csv",
+               header=T,row.names=1)
+
+symnum.args <- list(cutpoints = c(0, 0.0001, 0.001, 0.01, 0.05, Inf), symbols = c("****", "***", "**", "*", " "))
+
+subset=subset(read, treatment!="RD4_YE5" & treatment!="RA5_RD4" & treatment!="RD4_NB7")
+
+ 
+ggplot1=ggplot(subset, aes(x=strain, y=growth_rate, 
+                   fill=culture, 
+                   color=strain)) +
+  geom_boxplot(alpha=.4, linewidth=0.7) +
+  theme_classic() + 
+  scale_fill_manual(values=c('white','gray'))+
+
+    scale_color_manual(values=c('#4D9DE0','#E15554', '#3BB273',"#7768AE")) +
+  theme(plot.margin=unit(c(0,0,0,0.25),"cm"))+
+# theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+   theme(legend.position="none",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+
+  ylab(expression("Growth rate " * mu *  ~day^-1)) +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  scale_x_discrete(name='') +coord_flip() +
+  stat_compare_means(aes(x=strain, y=growth_rate,
+                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE)
+ggplot1
+
+
+```
+
+#### with fv.fm
+```{r fv-growth-a, dpi=300, width=5,height=6,message=FALSE, error=FALSE, warning=FALSE}
+
+
+read<-read.csv(file="datafiles/TR_Growth_rates_Feb16.csv",
+               header=T,row.names=1)
+dim(read)
+head(read)
+
+read2=subset(read, strain!="NB4" & strain !="NB6" & strain !="RA4" & strain !="YC5")
+
+gplot2=ggplot(read, 
+             aes(x=strain, y=fv,
+                 color=factor(strain), fill=factor(culture)))+
+  geom_boxplot(alpha=.4, linewidth=0.7) +
+  theme_classic() + 
+  scale_fill_manual(values=c('white','gray'))+
+ # scale_color_manual(values=c('#003f5c','#7a5195', '#ef5675',"#ffa600")) +
+      scale_color_manual(values=c('#4D9DE0','#E15554', '#3BB273',"#7768AE")) +
+
+    theme(legend.position="none",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+
+ # scale_y_continuous(name='Growth Rate')+
+  ylab("(Fm/Fo)/Fm") +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  scale_x_discrete(name='')+ coord_flip()
+cowplot::plot_grid(ggplot1, gplot2, 
+                   rel_heights = c(1,1),
+                   nrow=2,
+                   align='h',
+                   axis='l',
+                   byrow=TRUE, labels='auto')
+       #           rel_widths = c(1.7,1))
+
+```
+
+
+#### fv/fm with sign
+```{r fv-growth-b, dpi=300, width=5,height=6,message=FALSE, error=FALSE, warning=FALSE}
+
+
+read<-read.csv(file="datafiles/TR_Growth_rates_Feb16.csv",
+               header=T,row.names=1)
+dim(read)
+head(read)
+
+read2=subset(read, strain!="NB4" & strain !="NB6" & strain !="RA4" & strain !="YC5")
+
+gplot2=ggplot(read, 
+             aes(x=strain, y=fv,
+                 color=factor(strain), fill=factor(culture)))+
+  geom_boxplot(alpha=.4, linewidth=0.7) +
+  theme_classic() + 
+  scale_fill_manual(values=c('white','gray'))+
+ # scale_color_manual(values=c('#003f5c','#7a5195', '#ef5675',"#ffa600")) +
+      scale_color_manual(values=c('#4D9DE0','#E15554', '#3BB273',"#7768AE")) +
+
+    theme(legend.position="none",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+
+ # scale_y_continuous(name='Growth Rate')+
+  ylab("(Fm/Fo)/Fm") +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  scale_x_discrete(name='')+ coord_flip() +
+  stat_compare_means(aes(x=strain, y=fv,
+                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE)
+    
+
+gplot2
+    
+
+cowplot::plot_grid(ggplot1, gplot2, 
+                   rel_heights = c(1,1),
+                   nrow=2,
+                   align='h',
+                   axis='l',
+                   byrow=TRUE, labels='auto')
+       #           rel_widths = c(1.7,1))
+
+```
+
+
+
+#### with terminal biomass
+
+
+```{r final-growth, dpi=300, width=5,height=6,message=FALSE, error=FALSE, warning=FALSE}
+
+counts=read.csv(file='datafiles/rotula_cellcounts.csv',header=T,row.names=1)
+
+dim(counts)
+head(counts)
+
+gplot_counts=ggplot(counts, 
+             aes(x=strain, y=X5,
+                 color=factor(strain), fill=factor(bacteria)))+
+  geom_boxplot(alpha=.4, linewidth=0.7) +
+  theme_classic() + 
+  scale_fill_manual(values=c('white','gray'))+
+      scale_color_manual(values=c('#4D9DE0','#E15554', '#3BB273',"#7768AE")) +
+
+    theme(legend.position="none",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+
+ # scale_y_continuous(name='Growth Rate')+
+  ylab("Terminal Biomass (cells/mL)") +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  scale_x_discrete(name='')+ coord_flip() +
+  stat_compare_means(aes(x=strain, y=X5,
+                 color=factor(bacteria)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE)
+
+gplot_counts
+
+cowplot::plot_grid(ggplot1,  gplot_counts,   gplot2,
+                   rel_heights = c(1,1),
+                   nrow=1,
+                   align='h',
+                   axis='l',
+                   byrow=TRUE, labels='auto')
+       #           rel_widths = c(1.7,1))
+
+```
+
+##### stats of fv/fm
+
+
+
+
+## Growth Curves
+
+### Diatoms
+```{r curves-1, message=FALSE, error=FALSE, warning=FALSE}
+read=read.csv(file='datafiles/rotula_cellcounts.csv',header=T,row.names=1)
+dim(read)
+treatment=as.factor(read$treatment[1:48])
+
+dim(read)
+growth_data=data.frame(read[1:48,3:7])
+
+# get mean and standard deviation
+mean=aggregate(growth_data,by=list(treatment),FUN=mean,na.rm=T)
+mean=t(mean[,2:6])
+sd=aggregate(growth_data,by=list(treatment),FUN=sd,na.rm=T)
+sd=t(sd[,2:6])
+# set time
+time=c(0,2,3,4,5)
+
+doubles=read[61:69,]
+treat_doub=doubles$treatment
+doubles_data=doubles[,3:7]
+
+mean_db=aggregate(doubles_data,by=list(treat_doub),FUN=mean,na.rm=T)
+mean_db=t(mean_db[,2:6])
+sd_db=aggregate(doubles_data,by=list(treat_doub),FUN=sd,na.rm=T)
+sd_db=t(sd_db[,2:6])
+
+
+```
+
+
+#### Plot Subset of Strains (used)
+```{r curves-5, message=FALSE, error=FALSE, warning=FALSE}
+
+read=read.csv(file='datafiles/rotula_cellcounts.csv',header=T)
+# dim(read)
+
+growth_data=data.frame(read[,6:10])
+
+# get mean and standard deviation
+mean=aggregate(growth_data,by=list(read$treatment),FUN=mean,na.rm=T)
+sd=aggregate(growth_data,by=list(read$treatment),FUN=sd,na.rm=T)
+# set time
+time=c(0,2,3,4,5)
+#     scale_color_manual(values=c('#4D9DE0','#E15554', '#3BB273',"#7768AE")) +
+
+{par(mfrow=c(2,2),
+     mar=c(5,5,1,1))
+  
+  mean_ra5=as.numeric(subset(mean, Group.1=="RA5")[,2:6])
+  sd_ra5=as.numeric(subset(sd, Group.1=="RA5")[,2:6])
+  #RA5
+  errbar(x=time,y=mean_ra5,
+         yplus=mean_ra5-sd_ra5,
+         yminus=mean_ra5+sd_ra5,
+         ylim=c(100,50000),log='y',type='b',col='#7768AE', pch=21, bg='gray',errbar.col = '#7768AE',cex=1.3,
+         xlab="Time (days)",
+         ylab="Diatom Concentration (cells/mL)",xaxt='n',
+         yaxt='n')
+  mean_ra5=as.numeric(subset(mean, Group.1=="RA5_AX")[,2:6])
+  sd_ra5=as.numeric(subset(sd, Group.1=="RA5_AX")[,2:6])
+  errbar(x=time,y=mean_ra5,
+         yplus=mean_ra5-sd_ra5,
+         yminus=mean_ra5+sd_ra5,
+         col='#7768AE', pch=21, bg='white',errbar.col = '#7768AE',cex=1.3,
+         type='b',add=T)
+  text(1,200,"A1",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  axis(1, at=c(0:5),label=TRUE)
+  legend("bottomright", legend=c("xenic",'axenic'), pch=21, pt.bg=c('grey','white'), bty='n')
+
+  
+  ### RD4
+mean_ra5=as.numeric(subset(mean, Group.1=="RD4")[,2:6])
+  sd_ra5=as.numeric(subset(sd, Group.1=="RD4")[,2:6])
+  errbar(x=time,y=mean_ra5,
+         yplus=mean_ra5-sd_ra5,
+         yminus=mean_ra5+sd_ra5,
+         ylim=c(100,50000),log='y',type='b',col='#4D9DE0', pch=21, bg='gray',errbar.col = '#4D9DE0',cex=1.3,
+         xlab="Time (days)",
+         ylab="Diatom Concentration (cells/mL)",xaxt='n',
+         yaxt='n')
+  mean_ra5=as.numeric(subset(mean, Group.1=="RD4_AX")[,2:6])
+  sd_ra5=as.numeric(subset(sd, Group.1=="RD4_AX")[,2:6])
+  errbar(x=time,y=mean_ra5,
+         yplus=mean_ra5-sd_ra5,
+         yminus=mean_ra5+sd_ra5,
+         col='#4D9DE0', pch=21, bg='white',errbar.col = '#4D9DE0',cex=1.3,
+         type='b',add=T)
+  text(1,200,"A2",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  axis(1, at=c(0:5),label=TRUE)
+  legend("bottomright", legend=c("xenic",'axenic'), pch=21, pt.bg=c('grey','white'), bty='n')
+  
+  
+  
+   ### RD4
+mean_ra5=as.numeric(subset(mean, Group.1=="YE5")[,2:6])
+  sd_ra5=as.numeric(subset(sd, Group.1=="YE5")[,2:6])
+  errbar(x=time,y=mean_ra5,
+         yplus=mean_ra5-sd_ra5,
+         yminus=mean_ra5+sd_ra5,
+         ylim=c(100,50000),log='y',type='b',col='#E15554', pch=21, bg='gray',errbar.col = '#E15554',cex=1.3,
+         xlab="Time (days)",
+         ylab="Diatom Concentration (cells/mL)",xaxt='n',
+         yaxt='n')
+  mean_ra5=as.numeric(subset(mean, Group.1=="YE5_AX")[,2:6])
+  sd_ra5=as.numeric(subset(sd, Group.1=="YE5_AX")[,2:6])
+  errbar(x=time,y=mean_ra5,
+         yplus=mean_ra5-sd_ra5,
+         yminus=mean_ra5+sd_ra5,
+         col='#E15554', pch=21, bg='white',errbar.col = '#E15554',cex=1.3,
+         type='b',add=T)
+  text(1,200,"B1",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  axis(1, at=c(0:5),label=TRUE)
+  legend("bottomright", legend=c("xenic",'axenic'), pch=21, pt.bg=c('grey','white'), bty='n')
+
+  
+   ### RD4
+mean_ra5=as.numeric(subset(mean, Group.1=="NB7")[,2:6])
+  sd_ra5=as.numeric(subset(sd, Group.1=="NB7")[,2:6])
+  errbar(x=time,y=mean_ra5,
+         yplus=mean_ra5-sd_ra5,
+         yminus=mean_ra5+sd_ra5,
+         ylim=c(100,50000),log='y',type='b',col='#3BB273', pch=21, bg='gray',errbar.col = '#3BB273',cex=1.3,
+         xlab="Time (days)",
+         ylab="Diatom Concentration (cells/mL)",xaxt='n',
+         yaxt='n')
+  mean_ra5=as.numeric(subset(mean, Group.1=="NB7_AX")[,2:6])
+  sd_ra5=as.numeric(subset(sd, Group.1=="NB7_AX")[,2:6])
+  errbar(x=time,y=mean_ra5,
+         yplus=mean_ra5-sd_ra5,
+         yminus=mean_ra5+sd_ra5,
+         col='#3BB273', pch=21, bg='white',errbar.col = '#3BB273',cex=1.3,
+         type='b',add=T)
+  text(1,200,"C1",font=2)
+  axis(2,at=c(100,1000,12500,50000))
+  axis(1, at=c(0:5),label=TRUE)
+  legend("bottomright", legend=c("xenic",'axenic'), pch=21, pt.bg=c('grey','white'), bty='n')
+  
+  }
+
+```
+
+```{r}
+
+read=read.csv(file="datafiles/bact_growth.csv",header=T)
+bact1=subset(read,treat !="Bact" )
+
+
+bact11=mean(bact1$X3)
+bact12=mean(bact1$X4)
+
+read=read.csv(file='datafiles/rotula_cellcounts.csv',header=T)
+xen=subset(read, bacteria=="xenic")
+
+xen
+
+mean1=mean(xen$X3)
+mean2=mean(xen$X4)
+
+bact11/mean1
+bact12/mean2
+
+```
+
+
+## FCM Spectra
+
+#### with lables 
+
+```{r}
+## add diatom growht rates first 
+library(ggridges)
+read=read.csv(file='datafiles/fcm_rotula.csv',header=T)
+data1=subset(read, Temp !="22")
+
+data1$names=paste(data1$Diatom, data1$Temp,data1$Bact)
+data1$naems2=paste(data1$strain_2)
+
+
+
+plot3=ggplot(data1, aes(RED,y=naems2, fill=factor(Treat))) +
+  geom_density_ridges(alpha=0.5) +
+  theme_classic(base_size=12)+
+  scale_fill_manual(values=c('#631879','white','#3B4992','white', '#EE0000','white',"#008B45",'white')) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
+  scale_x_continuous(name='692/40 mm', limits=quantile(data1$RED, c(0.01, 0.9999))) + #+facet_wrap(~Pop, scales="free")
+  scale_y_discrete(name='')
+plot3
+
+ggplot(data1, aes(RED,y=naems2, fill=factor(Treat))) + 
+  geom_violin(alpha=0.7, trim=TRUE, scale='area', draw_quantiles  = c(0.25, 0.5, 0.75)) +
+  theme_classic(base_size=12)+
+   scale_fill_manual(values=c('#631879','white','#3B4992','white', '#EE0000','white',"#008B45",'white')) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm")) +
+  scale_x_continuous(name='692/40 mm', limits=quantile(data1$RED, c(0.01, 0.9999))) +   coord_flip() 
+
+
+ggplot(data1, aes(RED,y=naems2, fill=factor(Treat))) + 
+  geom_violin(alpha=0.7, trim=TRUE, draw_quantiles  = c( 0.5)) +
+  theme_classic(base_size=12)+
+   scale_fill_manual(values=c('#631879','white','#3B4992','white', '#EE0000','white',"#008B45",'white')) +
+  scale_x_continuous(name='692/40 mm', limits=quantile(data1$RED, c(0.01, 0.9999))) +   coord_flip() 
+
+
+cowplot::plot_grid(plot3,ncol=3, labels='auto')
+
+
+levels(as.factor(data1$Treat))
+ 
+
+```
+
+
+
+#### RED with FIRE 
+
+```{r}
+## add diatom growht rates first 
+library(ggridges)
+read=read.csv(file='datafiles/fcm_rotula.csv',header=T)
+data1=subset(read, Temp !="22")
+
+data1$names=paste(data1$Diatom, data1$Temp,data1$Bact)
+data1$naems2=paste(data1$strain_2)
+
+
+
+plot3=ggplot(data1, aes(RED,y=naems2, fill=factor(Treat))) +
+  geom_density_ridges(alpha=0.5) +
+  theme_classic(base_size=12)+
+  scale_fill_manual(values=c('#631879','white','#3B4992','white', '#EE0000','white',"#008B45",'white')) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm"))+
+  # facet_grid(~Pop) +
+  theme(legend.position="none",axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
+  scale_x_continuous(name='692/40 mm', limits=quantile(data1$RED, c(0.01, 0.9999))) + #+facet_wrap(~Pop, scales="free")
+  scale_y_discrete(name='')
+plot3
+
+ggplot(data1, aes(RED,y=naems2, fill=factor(Treat))) + 
+  geom_violin(alpha=0.7, trim=TRUE, scale='area', draw_quantiles  = c(0.25, 0.5, 0.75)) +
+  theme_classic(base_size=12)+
+   scale_fill_manual(values=c('#631879','white','#3B4992','white', '#EE0000','white',"#008B45",'white')) +
+  theme(plot.margin=unit(c(0,0,0,0),"cm")) +
+  scale_x_continuous(name='692/40 mm', limits=quantile(data1$RED, c(0.01, 0.9999))) +   coord_flip() 
+
+
+ggplot(data1, aes(RED,y=naems2, fill=factor(Treat))) + 
+  geom_violin(alpha=0.7, trim=TRUE, draw_quantiles  = c( 0.5)) +
+  theme_classic(base_size=12)+
+   scale_fill_manual(values=c('#631879','white','#3B4992','white', '#EE0000','white',"#008B45",'white')) +
+  scale_x_continuous(name='692/40 mm', limits=quantile(data1$RED, c(0.01, 0.9999))) 
+
+
+cowplot::plot_grid(plot3,ncol=3, labels='auto')
+
+
+levels(as.factor(data1$Treat))
+ 
+
+```
+
+
+
+
+```{r fv-growth-c, dpi=300, width=5,height=6,message=FALSE, error=FALSE, warning=FALSE}
+
+read<-read.csv(file="datafiles/TR_Growth_rates_Feb16.csv",
+               header=T,row.names=1)
+# values_colb=c("#631879", "#3B4992", "#EE0000", "#008B45",
+symnum.args <- list(cutpoints = c(0, 0.0001, 0.001, 0.01, 0.05, Inf), symbols = c("****", "***", "**", "*", " "))
+ subset=read
+ggplot1=ggplot(subset, aes(x=strain_26, y=growth_rate, 
+                   fill=culture, 
+                   color=strain_26)) +
+  geom_boxplot(alpha=.7) +
+  theme_classic(base_size = 14) + 
+  scale_fill_manual(values=c('white','gray'))+
+
+    scale_color_manual(values=c('#631879','#3B4992', '#EE0000',"#008B45")) +
+  theme(plot.margin=unit(c(0,0,0,0.25),"cm"))+
+# theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+   theme(legend.position="none",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1)) + theme(text = element_text(size = 14)) +
+
+  ylab(expression("Growth rate " * mu *  ~day^-1)) +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  scale_x_discrete(name='') +coord_flip() +
+  stat_compare_means(aes(x=strain_26, y=growth_rate,
+                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE)
+ggplot1
+
+
+
+read<-read.csv(file="datafiles/TR_Growth_rates_Feb16.csv",
+               header=T,row.names=1)
+dim(read)
+head(read)
+read2=subset(read, strain!="NB4" & strain !="NB6" & strain !="RA4" & strain !="YC5")
+
+
+
+gplot2=ggplot(read, 
+             aes(x=strain_26, y=fv,
+                 color=factor(strain_26), fill=factor(culture)))+
+  geom_boxplot(alpha=.7) +
+  theme_classic(base_size=14) + 
+  scale_fill_manual(values=c('white','gray'))+
+ # scale_color_manual(values=c('#003f5c','#7a5195', '#ef5675',"#ffa600")) +
+    scale_color_manual(values=c('#631879','#3B4992', '#EE0000',"#008B45")) +
+    theme(legend.position="none",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+ # scale_y_continuous(name='Growth Rate')+
+  ylab("Fv/Fm") +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  scale_x_discrete(name='')+ coord_flip() +
+  stat_compare_means(aes(x=strain_26, y=fv,
+                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE)
+    
+
+gplot2
+    
+
+
+gplot22=ggplot(read, 
+             aes(x=strain_26, y=fv,
+                 color=factor(strain_26), fill=factor(culture)))+
+  geom_boxplot(alpha=.7) +
+  theme_classic(base_size=14) + 
+  scale_fill_manual(values=c('white','gray'))+
+ # scale_color_manual(values=c('#003f5c','#7a5195', '#ef5675',"#ffa600")) +
+    scale_color_manual(values=c('#631879','#3B4992', '#EE0000',"#008B45")) +
+    theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+ # scale_y_continuous(name='Growth Rate')+
+  ylab("Fv/Fm") +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  scale_x_discrete(name='')+ coord_flip() +
+  stat_compare_means(aes(x=strain_26, y=fv,
+                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE)
+  
+gplot22
+
+#ggsave("culture_legend.svg", plot = gplot22, width = 8, height = 5)
+
+gplot3=ggplot(data1, aes(RED,y=naems2, color=factor(strain_2), fill=factor(Bact))) + 
+  geom_violin(alpha=0.7, trim=TRUE,draw_quantiles = c(0.5)) +
+  theme_classic(base_size=14)+
+  ylab("") +
+  scale_fill_manual(values=c('white','gray'))+
+ # scale_color_manual(values=c('#003f5c','#7a5195', '#ef5675',"#ffa600")) +
+    scale_color_manual(values=c('#631879','#3B4992', '#EE0000',"#008B45")) +
+  scale_x_continuous(name='692/40 mm', limits=quantile(data1$RED, c(0.01, 0.9999)))  + theme(legend.position = 'none')
+gplot3
+
+
+data2=data1
+trimmed_data <- data2 %>%
+  group_by(names) %>%
+  filter(
+    RED >= quantile(RED, 0.025) &
+    RED <= quantile(RED, 0.975)
+  ) %>%
+  ungroup()
+
+
+gplot3=ggplot(trimmed_data, aes(RED,y=naems2, color=factor(strain_2), fill=factor(Bact))) + 
+  geom_boxplot(alpha=0.7, outliers=FALSE) +
+  theme_classic(base_size=14)+
+  ylab("") +
+  scale_fill_manual(values=c('white','gray'))+
+ # scale_color_manual(values=c('#003f5c','#7a5195', '#ef5675',"#ffa600")) +
+    scale_color_manual(values=c('#631879','#3B4992', '#EE0000',"#008B45")) +
+  scale_x_continuous(name='692/40 mm', limits=quantile(data1$RED, c(0.01, 0.9999)))  + theme(legend.position = 'none')
+gplot3
+
+gplot3=ggplot(trimmed_data, aes(RED,y=naems2, color=factor(strain_2), fill=factor(Bact))) + 
+  geom_violin(alpha=0.7, trim=TRUE, draw_quantiles = c(0.5)) +
+  theme_classic(base_size=14)+
+  ylab("") +
+  xlab("692/40 mm") + 
+  scale_fill_manual(values=c('white','gray'))+
+ # scale_color_manual(values=c('#003f5c','#7a5195', '#ef5675',"#ffa600")) +
+    scale_color_manual(values=c('#631879','#3B4992', '#EE0000',"#008B45")) +
+   theme(legend.position = 'none')
+gplot3
+
+clams=cowplot::plot_grid(ggplot1, gplot2, gplot3,
+                   rel_heights = c(1,1),
+                   nrow=1,
+                   align='h',
+                   axis='l',
+                   byrow=TRUE, labels='auto')
+#ggsave("filename.svg", plot = clams, width = 8, height = 4)
+
+```
+
+
+##### stats
+```{r}
+read=read.csv(file='datafiles/fcm_rotula.csv',header=T)
+
+#NbQ-B7
+nbq=subset(read, strain=="NbQ-B7")
+
+ks.test(subset(nbq, Bact=="Axenic")$FSC,subset(nbq, Bact=="Xenic")$FSC, alternative = 'greater', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$SSC,subset(nbq, Bact=="Xenic")$SSC, alternative = 'greater', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$RED,subset(nbq, Bact=="Xenic")$RED, alternative = 'greater', simulate.p.value=TRUE)
+
+
+#NbP-YE5
+nbq=subset(read, strain=="NbP-YE5")
+
+ks.test(subset(nbq, Bact=="Axenic")$FSC,subset(nbq, Bact=="Xenic")$FSC, alternative = 'greater', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$SSC,subset(nbq, Bact=="Xenic")$SSC, alternative = 'greater', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$RED,subset(nbq, Bact=="Xenic")$RED, alternative = 'greater', simulate.p.value=TRUE)
+
+#NbO-D4
+nbq=subset(read, strain=="NbO-D4")
+
+ks.test(subset(nbq, Bact=="Axenic")$FSC,subset(nbq, Bact=="Xenic")$FSC, alternative = 'greater', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$SSC,subset(nbq, Bact=="Xenic")$SSC, alternative = 'greater', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$RED,subset(nbq, Bact=="Xenic")$RED, alternative = 'greater', simulate.p.value=TRUE)
+
+
+#NbO-A5
+nbq=subset(read, strain=="NbO-A5")
+
+ks.test(subset(nbq, Bact=="Axenic")$FSC,subset(nbq, Bact=="Xenic")$FSC, alternative = 'greater', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$SSC,subset(nbq, Bact=="Xenic")$SSC, alternative = 'greater', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$RED,subset(nbq, Bact=="Xenic")$RED, alternative = 'greater', simulate.p.value=TRUE)
+
+
+```              
+   
+   
+##### stats
+```{r}
+read=read.csv(file='datafiles/fcm_rotula.csv',header=T)
+
+#NbQ-B7
+nbq=subset(read, strain=="NbQ-B7")
+
+ks.test(subset(nbq, Bact=="Axenic")$FSC,subset(nbq, Bact=="Xenic")$FSC, alternative = 'two.sided', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$SSC,subset(nbq, Bact=="Xenic")$SSC, alternative = 'two.sided', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$RED,subset(nbq, Bact=="Xenic")$RED, alternative = 'two.sided', simulate.p.value=TRUE)
+
+
+#NbP-YE5
+nbq=subset(read, strain=="NbP-YE5")
+
+ks.test(subset(nbq, Bact=="Axenic")$FSC,subset(nbq, Bact=="Xenic")$FSC, alternative = 'two.sided', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$SSC,subset(nbq, Bact=="Xenic")$SSC, alternative = 'two.sided', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$RED,subset(nbq, Bact=="Xenic")$RED, alternative = 'two.sided', simulate.p.value=TRUE)
+
+#NbO-D4
+nbq=subset(read, strain=="NbO-D4")
+
+ks.test(subset(nbq, Bact=="Axenic")$FSC,subset(nbq, Bact=="Xenic")$FSC, alternative = 'greater', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$SSC,subset(nbq, Bact=="Xenic")$SSC, alternative = 'greater', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$RED,subset(nbq, Bact=="Xenic")$RED, alternative = 'greater', simulate.p.value=TRUE)
+
+
+#NbO-A5
+nbq=subset(read, strain=="NbO-A5")
+
+ks.test(subset(nbq, Bact=="Axenic")$FSC,subset(nbq, Bact=="Xenic")$FSC, alternative = 'greater', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$SSC,subset(nbq, Bact=="Xenic")$SSC, alternative = 'greater', simulate.p.value=TRUE)
+ks.test(subset(nbq, Bact=="Axenic")$RED,subset(nbq, Bact=="Xenic")$RED, alternative = 'greater', simulate.p.value=TRUE)
+
+
+```              
+              
+# 16S data
+```{r,echo=F,message=F}
+## Chapter 3 97% OTUs
+## vst transformation 
+library(DESeq2)
+library(phyloseq)
+library(ape)
+library(vegan)
+library(GenomicRanges)
+library(CoDaSeq)
+library(zCompositions)
+library(compositions)
+
+x<-read.csv(file='datafiles/cg_feb26.csv',header=TRUE,row.names=1)
+dim(x)
+gloor_tab=x
+OTU = otu_table(x, taxa_are_rows=T)
+taxa<-read.csv(file="/Users/oliviaahern/Documents/PhD/Chapter2/CHP_3/Full_Paper/21Apr20/OTU_Taxa.csv",header=TRUE,row.names=1)
+t<-as.matrix(taxa)
+tax2<-tax_table(t)
+tree=read.tree('datafiles/otus_tree_21apr20.tre')
+map<-import_qiime_sample_data("datafiles/cg_map_17Feb26.txt")
+
+cg = phyloseq(OTU, map,tax2,tree)
+
+#cg_filt=subset_samples(cg, keep_2026 =='yes')
+
+cg
+cg=subset_samples(cg, keep_2026 =='yes')
+
+phyo1 = subset_taxa(cg, !phyla=="Cyanobacteria/Chloroplast")
+colSums(otu_table(phyo1))
+
+cg=phyo1
+is.rooted(phy_tree(cg))
+
+cg_filt=subset_samples(cg, keep_2026 =='yes')
+
+set.seed(1234)
+cg_filter=rarefy_even_depth(cg_filt, sample.size=4862, rngseed=1234)
+cg_filt=cg_filter
+```
+
+
+# General Alpha statistics 
+
+
+### figure 1 - no control 
+```{r}
+cg_filt2=subset_samples(cg_filt, definition !="bacterioplankton")
+cg_filt3=subset_samples(cg_filt2, diatom_control !="control")
+cg_filt2=cg_filt3
+s=specnumber(t(otu_table(cg_filt2)))
+
+
+boxplot((s)~sample_data(cg_filt2)$treatment_26.1, las=2, xlab="", log='y')
+treat2=sample_data(cg_filt2)$treatment_26.1
+
+spec=cbind(s, treat2)
+spec2=data.frame(spec)
+
+spec2
+#mean1=aggregate(as.numeric(s) ~ treat3, data = spec2, FUN=mean)
+mean1=with(spec2, tapply(as.numeric(s), treat2, mean))
+sd1=with(spec2, tapply(as.numeric(s), treat2, sd))
+
+treatment=names(sd1)
+spec_bar=cbind(mean1, sd1)
+spec_bar=data.frame(spec_bar)
+spec_bar$treatment=treatment
+
+custom_order =c( "A1 Coculture","A1 Algal-cell associated", 
+                 "A2 Coculture","A2 Algal-cell associated",
+                 "B1 Coculture","B1 Algal-cell associated",
+                 "C1 Coculture","C1 Algal-cell associated")  
+spec_bar$treatment2=spec_bar$treatment
+spec_bar$treatment2 <- factor(spec_bar$treatment2, levels = custom_order)
+spec_bar$treatment2=spec_bar$treatment
+spec_bar$treatment2 <- factor(spec_bar$treatment2, levels = custom_order)
+
+spec_bar$treatment_ag=spec_bar$treatment
+spec_bar$treatment_ag=as.factor((spec_bar$treatment_ag))
+levels(spec_bar$treatment_ag)=c("Algal-cell associated","Coculture", "Algal-cell associated","Coculture", "Algal-cell associated","Coculture", "Algal-cell associated", "Coculture")
+spec_bar <- spec_bar %>%
+  mutate(treatment_ag = fct_rev(factor(treatment_ag)))
+
+spec_bar$name=spec_bar$treatment
+spec_bar$name=as.factor((spec_bar$name))
+levels(spec_bar$name)=c("A1", "A1", "A2", "A2", "B1", "B1", "C1", "C1")
+
+values_colb=c( "#4D9DE0", '#E15554', '#3BB273', "#7768AE", "#4D9DE0", '#E15554', '#3BB273', "#7768AE")
+
+values_colb=c( "#E64B35", "#4DBBD5", "#00A087", "#3C5488","#E64B35", "#4DBBD5", "#00A087", "#3C5488")
+
+
+values_colb=c("#631879", "#3B4992", "#EE0000", "#008B45", "#631879", "#3B4992", "#EE0000", "#008B45")
+
+
+## log which i like 
+ggplot(spec_bar,aes(x=name, y=mean1)) +
+  geom_bar( aes(x=name, y=mean1), stat="identity", fill=values_colb, alpha=0.7) +
+    geom_errorbar( aes(x=name, ymin=mean1-sd1, ymax=mean1+sd1), width=0.4, colour="black", alpha=0.9, size=.7) +
+  xlab(" ") +
+  ylab("Species Richness") +
+#  coord_flip() +
+  facet_wrap(~treatment_ag, scales='free_x') +
+  theme_classic(base_size=14) +
+ scale_y_continuous(trans = 'log10') +
+    theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=12)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+figure1=ggplot(spec_bar,aes(x=name, y=mean1)) +
+  geom_bar( aes(x=name, y=mean1), stat="identity", fill=values_colb, alpha=0.7) +
+    geom_errorbar( aes(x=name, ymin=mean1-sd1, ymax=mean1+sd1), width=0.4, colour="black", alpha=0.9, size=.7) +
+  xlab(" ") +
+  ylab("Species Richness") +
+#  coord_flip() +
+  facet_wrap(~treatment_ag, scales='free_x') +
+  theme_classic(base_size=14) +
+ scale_y_continuous(trans = 'log10') +
+    theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=12)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+#ggsave('figure1.svg',figure1, dpi=300, height=4, width=5)
+
+
+```
+
+# Figure 2 barplot
+```{r}
+cg_filter=subset_samples(cg_filt,diatom_control=="diatom")
+glom=tax_glom(cg_filter, "species")
+
+abund=transform_sample_counts(glom, function(x) (x/sum(x)))
+
+ps_filtered=ps_prune(abund, min.samples = 0, min.reads = 0, min.abundance = 0.015)
+
+# 3. Melt the filtered data
+df_melt <- psmelt(ps_filtered)
+summary(as.factor(df_melt$species))
+
+sub1=subset(df_melt, Sample == "WGA18")
+sub1[,26:29]
+
+colors=c(
+'Aestuariibacter' ="#e59d97",
+'Aquibacter' ="#ffcaa5",
+'Candidatus Pelagibacter' ="#e9daa2",
+'Cellulophaga' ="#afb780",
+'Marinobacterium' ="#f8fff1",
+'Marinomonas' ="#8fc49b",
+'Neptuniibacter' ="#93efe7",
+'Owenweeksia' ="#ada5d9",
+'Tenacibaculum' ="#f5e4ff",
+'Vibrio' ="#ffc9e2",
+'Wandonia' ="#c6a2ae",
+'NA' ='white')
+
+
+df_melt <- df_melt %>%
+  mutate(definition_26 = fct_rev(factor(definition_26)))
+
+#phy_df <- psmelt(abund)
+p <- ggplot(df_melt, aes(x = Sample, y = Abundance, fill = species)) +
+  theme_classic(base_size = 12) +
+  xlab(" ") +
+  ylab(" Relative Abundance") +
+    facet_grid(~strain_26+definition_26,scales = "free", space="free") +
+  geom_bar(stat = "identity",linewidth=0.3, color='black') +
+  scale_fill_manual(values=colors) +
+theme(axis.text.x = element_text(angle=90, size=10), legend.position = 'left') 
+p
+```
+
+
+# nst
+```{r}
+
+library(NST)
+
+cg_filt2=subset_samples(cg_filt, definition !="bacterioplankton")
+
+cg_filt2
+
+try1=subset_samples(cg_filt2, Treatment3!="Bact_T0_filtered")
+try1=subset_samples(try1, Treatment3!="Bact_T0")
+try1=subset_samples(try1, treatment_26!="Bacteria Control T5")
+
+meta=cbind( sample_data(try1)$Treatment)
+meta=data.frame(meta)
+row.names(meta)=sample_data(try1)$X.OTU.ID
+colnames(meta)=c( "Strain") # metagroup - strain and group - BA_Micro
+
+groupie=cbind( sample_data(try1)$treatment_26)
+groupie=data.frame(groupie)
+row.names(groupie)=row.names(sample_data(try1))
+colnames(groupie)=c( "Treatment") # metagroup - strain and group - BA_Micro
+dim(groupie)
+
+otu_tab=t(otu_table(try1))
+# taxonomic nst 
+nst_1=tNST(comm = otu_tab , group = groupie, abundance.weighted=FALSE, meta.group = meta, dist.method = 'jaccard')
+nst_data=nst_1$index.grp
+par(mar=c(10,5,1,1))
+groups_ag=c('cocultured','cocultured','cocultured','cocultured',"algal-cell associated","algal-cell associated","algal-cell associated","algal-cell associated")
+
+groups_ag=c('co','co','co','co',"algal-cell","algal-cell","algal-cell","algal-cell")
+boxplot(nst_data$NST.i.jaccard~groups_ag, xlab=" ", ylab="NST", ylim=c(0,1),yaxt='n')
+axis(2, at=c(0,0.25,0.5,0.75,1))
+box(which='plot')
+
+nst_ba=nst_data$NST.i.jaccard[1:4]
+nst_microbiome=nst_data$NST.i.jaccard[5:8]
+
+
+
+mean(nst_ba)
+sd(nst_ba)
+
+mean(nst_microbiome)
+sd(nst_microbiome)
+```
+
+
+
+
+```{r}
+
+library(NST)
+
+cg_filt2=subset_samples(cg_filt, definition !="bacterioplankton")
+
+cg_filt2
+
+try1=subset_samples(cg_filt2, Treatment3!="Bact_T0_filtered")
+try1=subset_samples(try1, Treatment3!="Bact_T0")
+try1=subset_samples(try1, treatment_26!="Bacteria Control T5")
+
+strain=cbind( sample_data(try1)$diatom_strain)
+strain=data.frame(strain)
+row.names(strain)=sample_data(try1)$X.OTU.ID
+colnames(strain)=c( "Strain") # metagroup - strain and group - BA_Micro
+
+groupie=cbind( sample_data(try1)$definition)
+groupie=data.frame(groupie)
+row.names(groupie)=sample_data(try1)$X.OTU.ID
+colnames(groupie)=c( "Treatment") # metagroup - strain and group - BA_Micro
+dim(groupie)
+
+otu_tab=t(otu_table(try1))
+# taxonomic nst 
+nst_1=tNST(comm = otu_tab , group = groupie, meta.group = strain, dist.method = 'jaccard',abundance.weighted=FALSE)
+nst_data_ag=nst_1$index.grp
+nst_data_ag
+nst_data_group=nst_data_ag$ST.i.jaccard
+names(nst_data_group)=c("co", "algal-cell")
+par(mar=c(10,5,1,1))
+groups_ag=c('co',"algal-cell")
+barplot(nst_data_group,xlab=" ", ylab="NST", ylim=c(0,1),yaxt='n')
+axis(2, at=c(0,0.25,0.5,0.75,1))
+box(which='plot')
+
+```
+
+```{r}
+
+library(NST)
+
+cg_filt2=subset_samples(cg_filt, definition !="bacterioplankton")
+
+cg_filt2
+
+try1=subset_samples(cg_filt2, Treatment3!="Bact_T0_filtered")
+try1=subset_samples(try1, Treatment3!="Bact_T0")
+try1=subset_samples(try1, treatment_26!="Bacteria Control T5")
+
+strain=cbind( sample_data(try1)$diatom_strain)
+strain=data.frame(strain)
+row.names(strain)=sample_data(try1)$X.OTU.ID
+colnames(strain)=c( "Strain") # metagroup - strain and group - BA_Micro
+
+groupie=cbind( sample_data(try1)$definition)
+groupie=data.frame(groupie)
+row.names(groupie)=sample_data(try1)$X.OTU.ID
+colnames(groupie)=c( "Treatment") # metagroup - strain and group - BA_Micro
+dim(groupie)
+
+otu_tab=t(otu_table(try1))
+# taxonomic nst 
+nst_1=tNST(comm = otu_tab , group = groupie, meta.group = strain, dist.method = 'jaccard',abundance.weighted=FALSE)
+nst_data_ag=nst_1$index.grp
+nst_data_ag
+nst_data_group=nst_data_ag$ST.i.jaccard
+names(nst_data_group)=c("co", "algal-cell")
+par(mar=c(7,5,1,1))
+groups_ag=c('co',"algal-cell")
+barplot(nst_data_group,xlab=" ", ylab="NST", ylim=c(0,1),yaxt='n', col=c("gray60","gray40"),las=2,cex.names=1.2)
+axis(2, at=c(0,0.25,0.5,0.75,1))
+#box(which='plot')
+
+```
+# Beta diversity and ordinations
+
+## all samples pcoa
+```{r beta-1}
+
+diatom=subset_samples(cg_filt, diatom_control=='diatom')
+
+diatom2=transform_sample_counts(diatom, function(x) log(x+1))
+bray=vegdist(t(otu_table(diatom2)),'bray')
+
+p=prcomp(bray)
+summary(p)
+
+{
+  
+  par(mar=c(10,
+            5,1,1),xpd=FALSE)
+  plot(p$x[,1],p$x[,2],pch=sample_data(diatom)$pch,
+     bg=as.character(sample_data(diatom)$col_26),
+     xlab = "PCoA1 54 %", 
+     ylab= "PCoA2 12 %")
+ # axis(2, at=c(-2,0,2))
+ordiellipse(p$x,          group=as.factor(sample_data(diatom)$treatment_26.1),
+
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-2, -5,
+       legend=c("NbO-A5 BA","NbO-A5 Micro", "NbO-D4 BA", "NbO-D4 Micro", "NbP-YE5 BA", "NbP-YE5 Micro", "NbQ-B7 BA",
+                "NbQ-B7 Micro"),
+       bty='n',
+       pt.bg=c("#4D9DE0", "#4D9DE0", "#E15554", "#E15554", "#3BB273", "#3BB273", "#7768AE", "#7768AE"),
+
+       pch=c(21,22,21,22,21,22,21,22))
+
+}
+
+
+```
+
+## just microbiomes
+```{r beta-2a}
+cg_filt2=subset_samples(cg_filt, definition_26 =='Algal-cell associated')
+diatom_micro=transform_sample_counts(cg_filt2, function(x) log(x+1))
+bray=vegdist(t(otu_table(diatom_micro)),'bray')
+
+p_micro=prcomp(bray)
+summary(p_micro)
+
+mod <- betadisper(bray,group=as.factor(sample_data(diatom_micro)$strain_26))
+anova(mod)
+permutest(mod)
+TukeyHSD(mod)
+plot(mod, ellipse = TRUE, hull = FALSE, conf = 0.90) # 90% data ellipse
+color_micro=c(sample_data(diatom_micro)$col_26)
+
+{
+  par(mar=c(10,
+            5,1,1),xpd=FALSE)
+  plot(p_micro$x[,1],p_micro$x[,2],pch=sample_data(diatom_micro)$pch,
+     bg=as.character(sample_data(diatom_micro)$col_26), cex=2,
+     xlab = "PCoA1 32.56 %", 
+     ylab= "PCoA2 11.94 %")
+ # axis(2, at=c(-2,0,2))
+ordiellipse(p_micro$x,          group=as.factor(sample_data(diatom_micro)$strain_26),
+
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-1, 0,
+       legend=c("A1", "A2", "B1", "C1"),
+       bty='n',
+       pt.bg=c("#7768AE","#4D9DE0", "#E15554",  "#3BB273" ),
+
+       pch=c(21,22,21,22,21,22,21,22))
+
+}
+
+
+anosim(bray, sample_data(diatom_micro)$strain_26)
+adonis2(bray~sample_data(diatom_micro)$strain_26)
+
+```
+
+
+## just cos
+```{r beta-2}
+cg_filt2=subset_samples(cg_filt, definition_26 =='Coculture')
+diatom_co=transform_sample_counts(cg_filt2, function(x) log(x+1))
+bray=vegdist(t(otu_table(diatom_co)),'bray')
+
+p_co=prcomp(bray)
+summary(p_co)
+
+mod <- betadisper(bray,group=as.factor(sample_data(diatom_co)$strain_26))
+anova(mod)
+permutest(mod)
+TukeyHSD(mod)
+plot(mod, ellipse = TRUE, hull = FALSE, conf = 0.90) # 90% data ellipse
+
+{
+  par(mar=c(10,
+            5,1,1),xpd=FALSE)
+  plot(p_co$x[,1],p_co$x[,2],pch=sample_data(diatom_co)$pch,
+     bg=sample_data(diatom_co)$col_26, cex=2,
+     xlab = "PCoA1 30.91 %", 
+     ylab= "PCoA2 17.47 %")
+ # axis(2, at=c(-2,0,2))
+ordiellipse(p_co$x,          group=as.factor(sample_data(diatom_co)$strain_26),
+
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-1, 0,
+       legend=c("A1", "A2", "B1", "C1"),
+       bty='n',
+       pt.bg=c("#7768AE","#4D9DE0", "#E15554",  "#3BB273" ),
+
+       pch=c(21,22,21,22,21,22,21,22))
+
+}
+
+
+
+```
+
+
+## both pcoas together 
+```{r pcoa-3}
+
+
+{
+  par(mar=c(10,
+            5,1,1),mfrow=c(1,2),xpd=FALSE)
+  
+  
+  plot(p_co$x[,1],p_co$x[,2],pch=sample_data(diatom_co)$pch,
+     bg=sample_data(diatom_co)$col_26, cex=2,
+     xlab = "PCoA1 30.91 %", 
+     ylab= "PCoA2 17.47 %", xaxt='none', yaxt='none')
+  axis(1, at=c(-0.3,0,0.3))
+  axis(2, at=c(-0.2,0,0.2))
+ # axis(2, at=c(-2,0,2))
+ordiellipse(p_co$x,          group=as.factor(sample_data(diatom_co)$strain_26),
+
+           kind ='sd',conf=0.8,
+           label=TRUE)
+legend(-1, 0,
+       legend=c("A1", "A2", "B1", "C1"),
+       bty='n',
+       pt.bg=c("#7768AE","#4D9DE0", "#E15554",  "#3BB273" ),
+
+       pch=c(21,22,21,22,21,22,21,22))
+
+plot(p_micro$x[,1],p_micro$x[,2],pch=sample_data(diatom_micro)$pch,
+     bg=as.character(sample_data(diatom_micro)$col_26), cex=2,
+     xlab = "PCoA1 32.56 %", 
+     ylab= "PCoA2 11.94 %", xaxt='none', yaxt='none')
+  axis(1, at=c(-0.5,0,0.5))
+  axis(2, at=c(-0.5,0,0.5))
+ # axis(2, at=c(-2,0,2))
+ordiellipse(p_micro$x,          group=as.factor(sample_data(diatom_micro)$strain_26),
+
+           kind ='sd',conf=0.8,
+           label=TRUE)
+
+}
+
+
+
+  par(mar=c(20,5,1,1),mfrow=c(1,2),xpd=TRUE)
+  plot(p_co$x[,1],p_co$x[,2],pch=sample_data(diatom_co)$pch,
+     bg=sample_data(diatom_co)$col_26, cex=2,
+     xlab = "PCoA1 30.91 %", 
+     ylab= "PCoA2 17.47 %", xaxt='none', yaxt='none')
+  axis(1, at=c(-0.3,0,0.3))
+  axis(2, at=c(-0.2,0,0.2))
+ # axis(2, at=c(-2,0,2))
+legend(0, -0.7,
+       legend=c("A1", "A2", "B1", "C1"),
+       bty='n',
+       pt.bg=c("#7768AE","#4D9DE0", "#E15554",  "#3BB273" ), pch=21,
+       title='strain')
+legend(0, -1.5,
+       legend=c("Coculture", "Algal-cell Associated"),
+       bty='n',
+       pt.bg=c('white' ), pch=c(21,23),
+       title='treatment')
+      
+
+
+
+```
+
+
+### ggplot 2
+#### microbiomes 
+
+```{r}
+library(vegan)
+library(ggplot2)
+library(dplyr)
+
+# ---- 1. Compute distance matrix ----
+# otu_table: samples as rows, taxa/ASVs as columns (relative abundance or counts)
+cg_filt2=subset_samples(cg_filt,  definition_26 =='Algal-cell associated')
+diatom_co=transform_sample_counts(cg_filt2, function(x) log(x+1))
+bray=vegdist(t(otu_table(diatom_co)),'bray')
+
+
+# ---- 2. Run PCoA ----
+pcoa_result <- prcomp(bray)
+# Extract axis scores
+pca_scores <- as.data.frame(pcoa_result$x[, 1:2])
+colnames(pca_scores) <- c("PC1", "PC2")
+pca_scores$SampleID <- rownames(pca_scores)
+
+# % variance explained per axis
+var_explained <- round((pcoa_result$sdev^2 / sum(pcoa_result$sdev^2)) * 100, 1)
+
+
+strain_colors=c("A1"="#7768AE",
+                "A2"="#4D9DE0", 
+                "B1"="#E15554", "C1"= "#3BB273" )
+
+# ---- 3. Merge with sample metadata ----
+# metadata should have a SampleID column matching otu_table rownames,
+# plus the variable(s) you want to facet/color by
+metadata=sample_data(cg_filt2)
+metadata$SampleID=metadata$X.OTU.ID
+pca_scores <- pca_scores %>%
+  left_join(metadata, by = "SampleID")
+
+
+
+calc_ellipse <- function(df, npoints = 100) {
+  if (nrow(df) < 3) return(NULL)  # true mathematical floor: need ≥3 points for a non-degenerate 2D covariance matrix
+  center <- colMeans(df[, c("PC1", "PC2")])
+  cov_mat <- cov(df[, c("PC1", "PC2")])
+  
+  theta <- (0:npoints) * 2 * pi / npoints
+  circle <- cbind(cos(theta), sin(theta))
+  
+  chol_decomp <- tryCatch(chol(cov_mat), error = function(e) NULL)
+  if (is.null(chol_decomp)) return(NULL)  # singular matrix (e.g. n=2, points collinear)
+  
+  ellipse_pts <- t(center + t(circle %*% chol_decomp) * sqrt(qchisq(0.95, df = 2)))
+  data.frame(PC1 = ellipse_pts[, 1], PC2 = ellipse_pts[, 2])
+}
+
+ellipse_df <- pca_scores %>%
+  group_by( strain_26) %>%
+  group_modify(~ calc_ellipse(.x)) %>%
+  ungroup()
+
+
+
+# ---- 4. Plot ----
+pcoa1=ggplot(pca_scores, aes(x = PC1, y = PC2, fill = strain_26)) +
+  geom_point(size = 3, alpha = 0.8, pch=23) +
+  labs(
+    x = paste0("PC1 (", var_explained[1], "%)"),
+    y = paste0("PC2 (", var_explained[2], "%)"),
+    color = "Group"
+  ) +
+  theme_classic2(base_size = 14) +
+  geom_path(data = ellipse_df, aes(x = PC1, y = PC2),
+            linewidth = 0.3) +
+  scale_fill_manual(values=strain_colors) + theme(legend.position = 'none')
+pcoa1
+```
+
+#### coculutres 
+
+
+
+```{r}
+
+library(vegan)
+library(ggplot2)
+library(dplyr)
+
+# ---- 1. Compute distance matrix ----
+# otu_table: samples as rows, taxa/ASVs as columns (relative abundance or counts)
+cg_filt2=subset_samples(cg_filt,  definition_26 =='Coculture')
+diatom_co=transform_sample_counts(cg_filt2, function(x) log(x+1))
+bray=vegdist(t(otu_table(diatom_co)),'bray')
+
+
+# ---- 2. Run PCoA ----
+pcoa_result <- prcomp(bray)
+# Extract axis scores
+pca_scores <- as.data.frame(pcoa_result$x[, 1:2])
+colnames(pca_scores) <- c("PC1", "PC2")
+pca_scores$SampleID <- rownames(pca_scores)
+
+# % variance explained per axis
+var_explained <- round((pcoa_result$sdev^2 / sum(pcoa_result$sdev^2)) * 100, 1)
+
+
+strain_colors=c("A1"="#7768AE",
+                "A2"="#4D9DE0", 
+                "B1"="#E15554", "C1"= "#3BB273" )
+
+# ---- 3. Merge with sample metadata ----
+# metadata should have a SampleID column matching otu_table rownames,
+# plus the variable(s) you want to facet/color by
+metadata=sample_data(cg_filt2)
+metadata$SampleID=metadata$X.OTU.ID
+pca_scores <- pca_scores %>%
+  left_join(metadata, by = "SampleID")
+
+calc_ellipse <- function(df, npoints = 100) {
+  if (nrow(df) < 3) return(NULL)  # true mathematical floor: need ≥3 points for a non-degenerate 2D covariance matrix
+  center <- colMeans(df[, c("PC1", "PC2")])
+  cov_mat <- cov(df[, c("PC1", "PC2")])
+  
+  theta <- (0:npoints) * 2 * pi / npoints
+  circle <- cbind(cos(theta), sin(theta))
+  
+  chol_decomp <- tryCatch(chol(cov_mat), error = function(e) NULL)
+  if (is.null(chol_decomp)) return(NULL)  # singular matrix (e.g. n=2, points collinear)
+  
+  ellipse_pts <- t(center + t(circle %*% chol_decomp) * sqrt(qchisq(0.95, df = 2)))
+  data.frame(PC1 = ellipse_pts[, 1], PC2 = ellipse_pts[, 2])
+}
+
+ellipse_df <- pca_scores %>%
+  group_by( strain_26) %>%
+  group_modify(~ calc_ellipse(.x)) %>%
+  ungroup()
+
+pcoa2=ggplot(pca_scores, aes(x = PC1, y = PC2, fill = strain_26)) +
+  geom_point(size = 3, alpha = 0.8, pch=23) +
+  labs(
+    x = paste0("PC1 (", var_explained[1], "%)"),
+    y = paste0("PC2 (", var_explained[2], "%)"),
+    color = "Group"
+  ) +
+  theme_classic2(base_size = 14) +
+  geom_path(data = ellipse_df, aes(x = PC1, y = PC2),
+            linewidth = 0.3) +
+  scale_fill_manual(values=strain_colors) + theme(legend.position = 'none')
+
+pcoa2
+
+```
+
+
+```{r}
+cows=cowplot::plot_grid(pcoa2,pcoa1,labels='auto')
+#ggsave('pcoa-ggplot.svg', cows, height=4, width=10)
+
+```
+
+
+#### legend 
+
+```{r}
+
+library(vegan)
+library(ggplot2)
+library(dplyr)
+
+# ---- 1. Compute distance matrix ----
+# otu_table: samples as rows, taxa/ASVs as columns (relative abundance or counts)
+cg_filt2=subset_samples(cg_filt,  definition_26 =='Coculture' |
+                           definition_26 =='Algal-cell associated')
+diatom_co=transform_sample_counts(cg_filt2, function(x) log(x+1))
+bray=vegdist(t(otu_table(diatom_co)),'bray')
+
+
+# ---- 2. Run PCoA ----
+pcoa_result <- prcomp(bray)
+# Extract axis scores
+pca_scores <- as.data.frame(pcoa_result$x[, 1:2])
+colnames(pca_scores) <- c("PC1", "PC2")
+pca_scores$SampleID <- rownames(pca_scores)
+
+# % variance explained per axis
+var_explained <- round((pcoa_result$sdev^2 / sum(pcoa_result$sdev^2)) * 100, 1)
+
+
+strain_colors=c("A1"="#7768AE",
+                "A2"="#4D9DE0", 
+                "B1"="#E15554", "C1"= "#3BB273" )
+
+# ---- 3. Merge with sample metadata ----
+# metadata should have a SampleID column matching otu_table rownames,
+# plus the variable(s) you want to facet/color by
+metadata=sample_data(cg_filt2)
+metadata$SampleID=metadata$X.OTU.ID
+pca_scores <- pca_scores %>%
+  left_join(metadata, by = "SampleID")
+
+calc_ellipse <- function(df, npoints = 100) {
+  if (nrow(df) < 3) return(NULL)  # true mathematical floor: need ≥3 points for a non-degenerate 2D covariance matrix
+  center <- colMeans(df[, c("PC1", "PC2")])
+  cov_mat <- cov(df[, c("PC1", "PC2")])
+  
+  theta <- (0:npoints) * 2 * pi / npoints
+  circle <- cbind(cos(theta), sin(theta))
+  
+  chol_decomp <- tryCatch(chol(cov_mat), error = function(e) NULL)
+  if (is.null(chol_decomp)) return(NULL)  # singular matrix (e.g. n=2, points collinear)
+  
+  ellipse_pts <- t(center + t(circle %*% chol_decomp) * sqrt(qchisq(0.95, df = 2)))
+  data.frame(PC1 = ellipse_pts[, 1], PC2 = ellipse_pts[, 2])
+}
+
+ellipse_df <- pca_scores %>%
+  group_by( strain_26) %>%
+  group_modify(~ calc_ellipse(.x)) %>%
+  ungroup()
+
+
+pca_scores_all=pca_scores
+
+
+pcoa_legs=ggplot(pca_scores_all, aes(x = PC1, y = PC2, fill = strain_26, color=strain_26)) +
+  geom_point(size = 3, alpha = 0.8,aes(fill=strain_26, shape=definition_26)) +
+  labs(
+    x = paste0("PC1 (", var_explained[1], "%)"),
+    y = paste0("PC2 (", var_explained[2], "%)"),
+    color = "Group"
+  ) +
+  facet_wrap(~definition_26) +
+  theme_classic2(base_size = 14) +
+  scale_fill_manual(values=strain_colors) +
+  scale_color_manual(values=strain_colors)+ theme(legend.position = 'left')
+#ggsave('pcoa-legend.svg', plot=pcoa_legs)
+
+
+```
+
+
+# ribbon plot
+
+```{r}
+library(ggalluvial)
+library(ggplot2)
+df_melt
+
+cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="A1" | strain_26==
+                            "A2" | strain_26== "B1" | strain_26 =="C1")
+physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
+glom=tax_glom(physeq_merged, "family")
+
+abund=transform_sample_counts(glom, function(x) (x/sum(x)))
+keep_taxa <- taxa_sums(abund) / nsamples(abund) > 0.01
+ps_filtered <- prune_taxa(keep_taxa, abund)
+ps_filtered=ps_prune(abund, min.samples = 0, min.reads = 0, min.abundance = 0.01)
+tax_table(ps_filtered)
+all_melt <- psmelt(ps_filtered)
+
+all_melt <- all_melt %>%
+  group_by(Sample, family) %>%
+  summarise(Abundance = sum(Abundance), .groups = "drop")
+all_melt$family[is.na(all_melt$family)] <- "Other"
+summary(as.factor(all_melt$family))
+length(summary(as.factor(all_melt$family)))
+all_melt <- all_melt %>%
+  mutate(Sample = fct_relevel(Sample,
+                              "Innoculum", "Coculture", "Algal-cell associated"))
+
+all_figure=ggplot(all_melt, aes(x = Sample, y = Abundance, alluvium = family, stratum = family, fill = family)) +
+  geom_flow(alpha = 0.7,na.rm=T) +
+  geom_stratum() +
+  theme_minimal(base_size=12) +
+  theme(legend.position = 'none') +
+  xlab("A1 sample flow") +
+  ylab("Relative Abundance")
+all_figure
+
+
+library(ggalluvial)
+library(ggplot2)
+
+
+#A1 
+cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="A1")
+physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
+glom=tax_glom(physeq_merged, "family")
+abund=transform_sample_counts(glom, function(x) (x/sum(x)))
+a1_melt <- psmelt(abund)
+
+keep_classes <- c("Alteromonadales", "Cytophagales", "Flavobacteriales",
+                  "Gammaproteobacteria_incertae_sedis", "Methylophilales",
+                  "Oceanospirillales", "Pseudomonadales", "Rhodobacterales",
+                  "Rhodospirillales", "SAR11",
+                  "Vibrionales", "WPS-2_genera_incertae_sedis")
+
+a1_summed <- a1_melt %>%
+  mutate(family = fct_other(family, keep = keep_classes, other_level = "Other"))
+
+a1_summed <- a1_summed %>%
+  group_by(Sample, family) %>%
+  summarise(Abundance = sum(Abundance), .groups = "drop")
+library(forcats)
+a1_summed <- a1_summed %>%
+  mutate(Sample = fct_relevel(Sample,
+                              "Innoculum", "Coculture", "Algal-cell associated"))
+tol_muted <- c(
+  "#88CCEE", "#44AA99", "#117733", "#332288",
+  "#DDCC77", "#999933", "#CC6677", "#882255",
+  "#AA4499", "#DDDDDD", "#6699CC", "#888888", 'black'
+)
+
+a1_figure=ggplot(a1_summed, aes(x = Sample, y = Abundance, alluvium = family, stratum = family, fill = family)) +
+  geom_flow(alpha = 0.7,na.rm=T) +
+  geom_stratum() +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = 'none') +
+  xlab("A1") +
+  scale_fill_manual(values = tol_muted) +
+  ylab("Relative Abundance")
+a1_figure
+
+a1_figure2=ggplot(a1_summed, aes(x = Sample, y = Abundance, alluvium = family, stratum = family, fill = family)) +
+  geom_flow(alpha = 0.7,na.rm=T) +
+  geom_stratum() +
+  theme_minimal() +
+  theme(legend.position = 'bottom') +
+  xlab("A1") +
+  scale_fill_manual(values = tol_muted) +
+  ylab("Relative Abundance")
+a1_figure2
+
+#ggsave('flowplot_legend.svg', plot=a1_figure2)
+
+#A2
+cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="A2")
+physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
+glom=tax_glom(physeq_merged, "family")
+abund=transform_sample_counts(glom, function(x) (x/sum(x)))
+a2_melt <- psmelt(abund)
+
+a2_summed <- a2_melt %>%
+  mutate(family = fct_other(family, keep = keep_classes, other_level = "Other"))
+
+a2_summed <- a2_summed %>%
+  group_by(Sample, family) %>%
+  summarise(Abundance = sum(Abundance), .groups = "drop")
+
+library(forcats)
+a2_summed <- a2_summed %>%
+  mutate(Sample = fct_relevel(Sample,
+                                     "Innoculum", "Coculture", "Algal-cell associated"))
+
+a2_figure=ggplot(a2_summed, aes(x = Sample, y = Abundance, alluvium = family, stratum = family, fill = family)) +
+  geom_flow(alpha = 0.7) +
+  geom_stratum() +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = 'none') +
+  xlab("A2") +
+  scale_fill_manual(values = tol_muted) +
+  ylab("Relative Abundance")
+a2_figure
+
+#B1
+cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="B1")
+physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
+glom=tax_glom(physeq_merged, "family")
+abund=transform_sample_counts(glom, function(x) (x/sum(x)))
+b1_melt <- psmelt(abund)
+b1_summed <- b1_melt %>%
+  mutate(family = fct_other(family, keep = keep_classes, other_level = "Other"))
+
+b1_summed <- b1_summed %>%
+  group_by(Sample, family) %>%
+  summarise(Abundance = sum(Abundance), .groups = "drop")
+
+b1_summed <- b1_summed %>%
+  mutate(Sample = fct_relevel(Sample,
+                              "Innoculum", "Coculture", "Algal-cell associated"))
+
+b1_figure=ggplot(b1_summed, aes(x = Sample, y = Abundance, alluvium = family, stratum = family, fill = family)) +
+  geom_flow(alpha = 0.7) +
+  geom_stratum() +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = 'none') +
+  xlab("B1") +
+  scale_fill_manual(values = tol_muted) +
+  ylab("Relative Abundance")
+b1_figure
+
+
+
+# C1
+cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="C1")
+physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
+glom=tax_glom(physeq_merged, "family")
+abund=transform_sample_counts(glom, function(x) (x/sum(x)))
+
+c1_melt <- psmelt(abund)
+c1_summed <- c1_melt %>%
+  mutate(family = fct_other(family, keep = keep_classes, other_level = "Other"))
+c1_summed <- c1_summed %>%
+  group_by(Sample, family) %>%
+  summarise(Abundance = sum(Abundance), .groups = "drop")
+
+c1_summed <- c1_summed %>%
+  mutate(Sample = fct_relevel(Sample,
+                              "Innoculum", "Coculture", "Algal-cell associated"))
+
+c1_figure=ggplot(c1_summed, aes(x = Sample, y = Abundance, alluvium = family, stratum = family, fill = family)) +
+  geom_flow(alpha = 0.7) +
+  geom_stratum() +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = 'none') +
+  xlab("C1") +
+  scale_fill_manual(values = tol_muted) +
+  ylab("Relative Abundance")
+c1_figure
+
+cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure)
+cowww=cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure,ncol =4)
+
+#ggsave('ribbon_plot.svg', plot=cowww, dpi=300, height=4, width=16)
+#cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure, 
+ #                  ncol=1)
+
+
+```
+
+
+
+
+# ribbon plot genus
+
+```{r}
+library(ggalluvial)
+library(ggplot2)
+df_melt
+
+cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="A1" | strain_26==
+                            "A2" | strain_26== "B1" | strain_26 =="C1")
+cg_filter1=subset_samples(cg_filt,strain_26 =="A1" | strain_26==
+                            "A2" | strain_26== "B1" | strain_26 =="C1")
+
+physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
+glom=tax_glom(physeq_merged, "species")
+
+abund=transform_sample_counts(glom, function(x) (x/sum(x)))
+keep_taxa <- taxa_sums(abund) / nsamples(abund) > 0.01
+ps_filtered <- prune_taxa(keep_taxa, abund)
+ps_filtered=ps_prune(abund, min.samples = 0, min.reads = 0, min.abundance = 0.01)
+tax_table(ps_filtered)
+all_melt <- psmelt(ps_filtered)
+summary(as.factor(all_melt$species))
+length(summary(as.factor(all_melt$species)))
+
+all_melt <- all_melt %>%
+  group_by(Sample, species) %>%
+  summarise(Abundance = sum(Abundance), .groups = "drop")
+
+
+summary(as.factor(all_melt$species))
+length(summary(as.factor(all_melt$species)))
+all_melt <- all_melt %>%
+  mutate(Sample = fct_relevel(Sample,
+                              "Coculture", "Algal-cell associated"))
+
+tol_muted_15 <- c(
+  "#88CCEE", "#44AA99", "#117733", "#332288",
+  "#DDCC77", "#999933", "#CC6677", "#882255",
+  "#AA4499", "#6699CC", "#E69F00", "#D55E00",
+  "#F0E442", "#CC79A7", "#000000"
+)
+tol_muted_15 <- c(
+  "#88CCEE", "#44AA99", "#117733", "#332288",
+  "#DDCC77", "#999933", "#CC6677", "#882255",
+  "#AA4499", "#DDDDDD", "#6699CC", "#888888",
+  "#E69F00", "#F0E442", "black"
+)
+
+tol_muted_14 <- c(
+  "#88CCEE", "#44AA99", "#117733", "#332288",
+  "#DDCC77", "#999933", "#CC6677", "#882255",
+  "#AA4499", "#DDDDDD", "#6699CC", "#888888",
+  "#E69F00", "black"
+)
+
+tol_muted_15 <- c(
+  "#88CCEE", "#44AA99", "#117733", "#332288",
+  "#DDCC77", "#999933", "#CC6677", "#882255",
+  "#AA4499", "#DDDDDD", "#6699CC",
+  "#E69F00", "#F0E442", "black"
+)
+
+
+all_melt$species <- as.factor(all_melt$species) %>%
+  fct_relevel("Other", after = Inf)
+
+all_figure=ggplot(all_melt, aes(x = Sample, y = Abundance, alluvium = species, stratum = species, fill = species)) +
+  geom_flow(alpha = 0.7,na.rm=T) +
+  geom_stratum() +
+  theme_minimal(base_size=12) +
+  theme(legend.position = 'bottom') +
+  xlab("A1 sample flow") +
+    scale_fill_manual(values = tol_muted_15) +
+  ylab("Relative Abundance")
+all_figure
+
+
+summary(as.factor(all_melt$species))
+length(summary(as.factor(all_melt$species)))
+
+
+library(ggalluvial)
+library(ggplot2)
+
+
+#A1 
+cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="A1")
+physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
+glom=tax_glom(physeq_merged, "species")
+abund=transform_sample_counts(glom, function(x) (x/sum(x)))
+a1_melt <- psmelt(abund)
+
+keep_classes <- c("Aestuariibacter", "Aquibacter","Candidatus Pelagibacter", 
+                  "Cellulophaga",
+                  "Marinobacterium", "Marinomonas","Neptuniibacter", "Other",
+                  "Owenweeksia", "Polaribacter","Pseudohongiella",
+                  "Tenacibaculum", "Vibrio",
+                  "Wandonia")
+a1_summed <- a1_melt %>%
+  mutate(species = fct_other(species, keep = keep_classes, other_level = "Other"))
+
+a1_summed <- a1_summed %>%
+  group_by(Sample, species) %>%
+  summarise(Abundance = sum(Abundance), .groups = "drop")
+library(forcats)
+a1_summed <- a1_summed %>%
+  mutate(Sample = fct_relevel(Sample,
+                              "Innoculum", "Coculture", "Algal-cell associated"))
+tol_muted <- c(
+  "#88CCEE", "#44AA99", "#117733", "#332288",
+  "#DDCC77", "#999933", "#CC6677", "#882255",
+  "#AA4499", "#DDDDDD", "#6699CC", "#888888", 'black'
+)
+
+a1_figure=ggplot(a1_summed, aes(x = Sample, y = Abundance, alluvium = species, stratum = species, fill = species)) +
+  geom_flow(alpha = 0.7,na.rm=T) +
+  geom_stratum() +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = 'none') +
+  xlab("A1") +
+  scale_fill_manual(values = tol_muted_15) +
+  ylab("Relative Abundance")
+a1_figure
+
+a1_figure2=ggplot(a1_summed, aes(x = Sample, y = Abundance, alluvium = species, stratum = species, fill = species)) +
+  geom_flow(alpha = 0.7,na.rm=T) +
+  geom_stratum() +
+  theme_minimal() +
+  theme(legend.position = 'bottom') +
+  xlab("A1") +
+  scale_fill_manual(values = tol_muted_15) +
+  ylab("Relative Abundance")
+a1_figure2
+
+#ggsave('flowplot_legend.svg', plot=a1_figure2)
+
+#A2
+cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="A2")
+physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
+glom=tax_glom(physeq_merged, "species")
+abund=transform_sample_counts(glom, function(x) (x/sum(x)))
+a2_melt <- psmelt(abund)
+
+a2_summed <- a2_melt %>%
+  mutate(species = fct_other(species, keep = keep_classes, other_level = "Other"))
+
+a2_summed <- a2_summed %>%
+  group_by(Sample, species) %>%
+  summarise(Abundance = sum(Abundance), .groups = "drop")
+
+library(forcats)
+a2_summed <- a2_summed %>%
+  mutate(Sample = fct_relevel(Sample,
+                                     "Innoculum", "Coculture", "Algal-cell associated"))
+
+a2_figure=ggplot(a2_summed, aes(x = Sample, y = Abundance, alluvium = species, stratum = species, fill = species)) +
+  geom_flow(alpha = 0.7) +
+  geom_stratum() +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = 'none') +
+  xlab("A2") +
+  scale_fill_manual(values = tol_muted_15) +
+  ylab("Relative Abundance")
+a2_figure
+
+#B1
+cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="B1")
+physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
+glom=tax_glom(physeq_merged, "species")
+abund=transform_sample_counts(glom, function(x) (x/sum(x)))
+b1_melt <- psmelt(abund)
+b1_summed <- b1_melt %>%
+  mutate(species = fct_other(species, keep = keep_classes, other_level = "Other"))
+
+b1_summed <- b1_summed %>%
+  group_by(Sample, species) %>%
+  summarise(Abundance = sum(Abundance), .groups = "drop")
+
+b1_summed <- b1_summed %>%
+  mutate(Sample = fct_relevel(Sample,
+                              "Innoculum", "Coculture", "Algal-cell associated"))
+
+b1_figure=ggplot(b1_summed, aes(x = Sample, y = Abundance, alluvium = species, stratum = species, fill = species)) +
+  geom_flow(alpha = 0.7) +
+  geom_stratum() +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = 'none') +
+  xlab("B1") +
+  scale_fill_manual(values = tol_muted_15) +
+  ylab("Relative Abundance")
+b1_figure
+
+
+
+# C1
+cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="C1")
+physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
+glom=tax_glom(physeq_merged, "species")
+abund=transform_sample_counts(glom, function(x) (x/sum(x)))
+
+c1_melt <- psmelt(abund)
+c1_summed <- c1_melt %>%
+  mutate(species = fct_other(species, keep = keep_classes, other_level = "Other"))
+c1_summed <- c1_summed %>%
+  group_by(Sample, species) %>%
+  summarise(Abundance = sum(Abundance), .groups = "drop")
+
+c1_summed <- c1_summed %>%
+  mutate(Sample = fct_relevel(Sample,
+                              "Innoculum", "Coculture", "Algal-cell associated"))
+
+c1_figure=ggplot(c1_summed, aes(x = Sample, y = Abundance, alluvium = species, stratum = species, fill = species)) +
+  geom_flow(alpha = 0.7) +
+  geom_stratum() +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = 'none') +
+  xlab("C1") +
+  scale_fill_manual(values = tol_muted_15) +
+  ylab("Relative Abundance")
+c1_figure
+
+cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure)
+cowww=cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure,ncol =4)
+
+#ggsave('ribbon_plot_genus.svg', plot=cowww, dpi=300, height=4, width=16)
+#ggsave('ribbon_plot_genus_leg.svg', plot=a1_figure2, dpi=300)
+
+#cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure, 
+  #                 ncol=1)
+
+
+```
