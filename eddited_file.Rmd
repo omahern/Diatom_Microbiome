@@ -74,7 +74,7 @@ ggplot1=ggplot(subset, aes(x=strain, y=growth_rate,
                    fill=culture, 
                    color=strain)) +
   geom_boxplot(alpha=.4, linewidth=0.7) +
-  theme_classic() + 
+  theme_classic(base_size = 12) + 
   scale_fill_manual(values=c('white','gray'))+
 
     scale_color_manual(values=c('#4D9DE0','#E15554', '#3BB273',"#7768AE")) +
@@ -86,7 +86,7 @@ ggplot1=ggplot(subset, aes(x=strain, y=growth_rate,
   guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
   scale_x_discrete(name='') +coord_flip() +
   stat_compare_means(aes(x=strain, y=growth_rate,
-                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE)
+                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE,size=12)
 ggplot1
 
 
@@ -364,6 +364,59 @@ mean_ra5=as.numeric(subset(mean, Group.1=="NB7")[,2:6])
 
 ```
 
+
+###### diatom curves with ggplot
+```{r}
+read=read.csv(file='datafiles/rotula_cellcounts.csv',header=T)
+# dim(read)
+
+growth_data=data.frame(read[,6:10])
+
+# get mean and standard deviation
+mean=aggregate(growth_data,by=list(read$treatment),FUN=mean,na.rm=T)
+sd=aggregate(growth_data,by=list(read$treatment),FUN=sd,na.rm=T)
+
+sd_p=pivot_longer(sd, cols = X0:X5)
+colnames(sd_p)=c("Diatom", "Time", "SD")
+
+mean_p=pivot_longer(mean, cols = X0:X5)
+colnames(mean_p)=c("Diatom", "Time", "Mean")
+mean_p$day=parse_number(mean_p$Time)
+
+diatom_conc=merge(mean_p, sd_p)
+diatom_conc$bacteria=c(rep("xenic",5),rep("axenic",5),
+                       rep("xenic",5),rep("axenic",5),
+                       rep("xenic",5),rep("axenic",5),
+                       rep("xenic",5),rep("axenic",5))
+diatom_conc$strain=c(rep("A1", 10), rep("A2",10), rep("B1",10), rep("C1",10))
+
+fill_bact=c('xenic'='gray','axenic'='white')
+strain_colors=c("A1"="#7768AE",
+                "A2"="#4D9DE0", 
+                "B1"="#E15554",
+                "C1"= "#3BB273" )
+
+
+diatom_plot=ggplot(diatom_conc, aes(x = day, y = Mean, fill=bacteria, color=strain)) +
+  geom_line(size=1) +                  # Draws the line
+  geom_point( size = 3, pch=21, linewidth=1.3) +                 # Adds data points
+  geom_errorbar(aes(ymin = Mean - SD, 
+                    ymax = Mean + SD), 
+                width = 0.1, color = "black") +
+  facet_grid(~strain) +
+  scale_fill_manual(values=fill_bact) +
+  scale_color_manual(values=strain_colors) +
+  theme_classic2(base_size=12) +
+  scale_y_log10() +
+  xlab("Time (days)") +
+  ylab("Diatom concentration (cells/mL)") +
+ theme(legend.position='none')
+diatom_plot
+
+```
+
+
+
 ```{r}
 
 read=read.csv(file="datafiles/bact_growth.csv",header=T)
@@ -386,6 +439,85 @@ bact12/mean2
 
 ```
 
+#### bacterial curves
+```{r}
+read=read.csv(file="datafiles/bact_growth2.csv",header=T)
+bact1=subset(read,treat !="Bact" )
+
+
+
+mean=aggregate(bact1,by=list(bact1$treat),FUN=mean,na.rm=T)
+mean$treat=NULL
+mean$strain=NULL
+
+sd=aggregate(bact1,by=list(bact1$treat),FUN=sd,na.rm=T)
+sd$treat=NULL
+sd$strain=NULL
+
+sd_p=pivot_longer(sd, cols = X0:X5)
+colnames(sd_p)=c("Diatom", "Time", "SD_bact")
+
+mean_p=pivot_longer(mean, cols = X0:X5)
+colnames(mean_p)=c("Diatom", "Time", "Mean_bact")
+mean_p$day=parse_number(mean_p$Time)
+
+bact_conc=merge(mean_p, sd_p)
+
+strain_colors=c("A1"="#7768AE",
+                "A2"="#4D9DE0", 
+                "B1"="#E15554",
+                "C1"= "#3BB273" )
+
+
+bact_plot=ggplot(bact_conc, aes(x = day, y = Mean_bact,  color=Diatom)) +
+  geom_line(size=1) +                  # Draws the line
+  geom_point( size = 3, pch=21, linewidth=1.3) +                 # Adds data points
+  geom_errorbar(aes(ymin = Mean_bact - SD_bact, 
+                    ymax = Mean_bact + SD_bact), 
+                width = 0.1, color = "black") +
+  facet_grid(~Diatom) +
+  scale_color_manual(values=strain_colors) +
+  theme_classic2(base_size=12) +
+  scale_y_log10() +
+  xlab("Time (days)") +
+  ylab("Bacterial concentration (cells/mL)") +
+  theme(legend.position = 'none')
+bact_plot
+```
+
+
+#### diatom_bact_ratio
+```{r}
+diatom_conc2=subset(diatom_conc, bacteria=='xenic')
+
+both_conc=merge(diatom_conc2, bact_conc)
+both_conc$ratio=(both_conc$Mean_bact/both_conc$Mean)
+
+strain_colors=c("A1"="#7768AE",
+                "A2"="#4D9DE0", 
+                "B1"="#E15554",
+                "C1"= "#3BB273" )
+
+
+ratio_plot=ggplot(both_conc, aes(x = day, y = ratio,  color=strain)) +
+  geom_line(size=1) +                  # Draws the line
+  geom_point( size = 3, pch=21, linewidth=1.3) +                 # Adds data points
+  facet_grid(~strain) +
+  scale_color_manual(values=strain_colors) +
+  theme_classic2(base_size=12) +
+  scale_y_log10() +
+  xlab("Time (days)") +
+  ylab("Bacteria:Diatom ratio") +
+  theme(legend.position = 'none')
+ratio_plot
+```
+
+
+```{r}
+
+cowplot::plot_grid(diatom_plot, bact_plot, ratio_plot, align='v', nrow=3)
+
+```
 
 ## FCM Spectra
 
@@ -433,6 +565,12 @@ cowplot::plot_grid(plot3,ncol=3, labels='auto')
 
 levels(as.factor(data1$Treat))
  
+ggplot(data1, aes(GREEN,y=naems2, fill=factor(Treat))) + 
+  geom_density_ridges(alpha=0.5) +
+  theme_classic(base_size=12)+
+   scale_fill_manual(values=c('#631879','white','#3B4992','white', '#EE0000','white',"#008B45",'white')) +
+  scale_x_continuous(name='692/40 mm', limits=quantile(data1$GREEN, c(0.01, 0.9999))) 
+
 
 ```
 
@@ -487,6 +625,7 @@ levels(as.factor(data1$Treat))
 
 
 
+#### USE ME for figure 1
 
 ```{r fv-growth-c, dpi=300, width=5,height=6,message=FALSE, error=FALSE, warning=FALSE}
 
@@ -511,7 +650,7 @@ ggplot1=ggplot(subset, aes(x=strain_26, y=growth_rate,
   guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
   scale_x_discrete(name='') +coord_flip() +
   stat_compare_means(aes(x=strain_26, y=growth_rate,
-                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE)
+                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE, size=10)
 ggplot1
 
 
@@ -538,7 +677,7 @@ gplot2=ggplot(read,
   guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
   scale_x_discrete(name='')+ coord_flip() +
   stat_compare_means(aes(x=strain_26, y=fv,
-                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE)
+                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE, size=10)
     
 
 gplot2
@@ -586,15 +725,6 @@ trimmed_data <- data2 %>%
   ungroup()
 
 
-gplot3=ggplot(trimmed_data, aes(RED,y=naems2, color=factor(strain_2), fill=factor(Bact))) + 
-  geom_boxplot(alpha=0.7, outliers=FALSE) +
-  theme_classic(base_size=14)+
-  ylab("") +
-  scale_fill_manual(values=c('white','gray'))+
- # scale_color_manual(values=c('#003f5c','#7a5195', '#ef5675',"#ffa600")) +
-    scale_color_manual(values=c('#631879','#3B4992', '#EE0000',"#008B45")) +
-  scale_x_continuous(name='692/40 mm', limits=quantile(data1$RED, c(0.01, 0.9999)))  + theme(legend.position = 'none')
-gplot3
 
 gplot3=ggplot(trimmed_data, aes(RED,y=naems2, color=factor(strain_2), fill=factor(Bact))) + 
   geom_violin(alpha=0.7, trim=TRUE, draw_quantiles = c(0.5)) +
@@ -604,8 +734,12 @@ gplot3=ggplot(trimmed_data, aes(RED,y=naems2, color=factor(strain_2), fill=facto
   scale_fill_manual(values=c('white','gray'))+
  # scale_color_manual(values=c('#003f5c','#7a5195', '#ef5675',"#ffa600")) +
     scale_color_manual(values=c('#631879','#3B4992', '#EE0000',"#008B45")) +
-   theme(legend.position = 'none')
+   theme(legend.position = 'none') 
+#   stat_compare_means(aes(x=RED, y=naems2,
+ #                paired=T,  label = "p.signif", method='ks.test', hide.ns=TRUE, size=10))
 gplot3
+
+
 
 clams=cowplot::plot_grid(ggplot1, gplot2, gplot3,
                    rel_heights = c(1,1),
@@ -613,6 +747,8 @@ clams=cowplot::plot_grid(ggplot1, gplot2, gplot3,
                    align='h',
                    axis='l',
                    byrow=TRUE, labels='auto')
+
+clams
 #ggsave("filename.svg", plot = clams, width = 8, height = 4)
 
 ```
@@ -739,14 +875,47 @@ cg_filt=cg_filter
 
 # General Alpha statistics 
 
+```{r}
+cg_filta=subset_samples(cg_filt, Pop2 =="COMM_T0")
+cg_filta
+s=specnumber(t(otu_table(cg_filta)))
+s
 
+cg_filt2=subset_samples(cg_filt, definition !="bacterioplankton")
+cg_filt3=subset_samples(cg_filt2, diatom_control !="control")
+cg_filt2=cg_filt3
+s=specnumber(t(otu_table(cg_filt2)))
+s
+
+boxplot((s)~sample_data(cg_filt2)$treatment_26.1, las=2, xlab="", log='y')
+treat2=sample_data(cg_filt2)$definition_26
+
+spec=cbind(s, treat2)
+spec2=data.frame(spec)
+
+mean1=with(spec2, tapply(as.numeric(s), treat2, mean))
+sd1=with(spec2, tapply(as.numeric(s), treat2, sd))
+mean1
+sd1
+
+
+cg_filt2=subset_samples(cg_filt, definition !="bacterioplankton")
+cg_filt3=subset_samples(cg_filt2, diatom_control =="control")
+sample_data(cg_filt3)
+treat=sample_data(cg_filt3)$extract
+spec=cbind(specnumber(t(otu_table(cg_filt3))), treat)
+spec=data.frame(spec)
+with(spec, tapply(as.numeric(V1), treat, mean))
+with(spec, tapply(as.numeric(V1), treat, sd))
+
+```
 ### figure 1 - no control 
 ```{r}
 cg_filt2=subset_samples(cg_filt, definition !="bacterioplankton")
 cg_filt3=subset_samples(cg_filt2, diatom_control !="control")
 cg_filt2=cg_filt3
 s=specnumber(t(otu_table(cg_filt2)))
-
+s
 
 boxplot((s)~sample_data(cg_filt2)$treatment_26.1, las=2, xlab="", log='y')
 treat2=sample_data(cg_filt2)$treatment_26.1
@@ -1095,7 +1264,7 @@ plot(mod, ellipse = TRUE, hull = FALSE, conf = 0.90) # 90% data ellipse
 {
   par(mar=c(10,
             5,1,1),xpd=FALSE)
-  plot(p_co$x[,1],p_co$x[,2],pch=sample_data(diatom_co)$pch,
+  plot(p_co$x[,1],p_co$x[,2],pch=21,
      bg=sample_data(diatom_co)$col_26, cex=2,
      xlab = "PCoA1 30.91 %", 
      ylab= "PCoA2 17.47 %")
@@ -1214,7 +1383,8 @@ var_explained <- round((pcoa_result$sdev^2 / sum(pcoa_result$sdev^2)) * 100, 1)
 
 strain_colors=c("A1"="#7768AE",
                 "A2"="#4D9DE0", 
-                "B1"="#E15554", "C1"= "#3BB273" )
+                "B1"="#E15554",
+                "C1"= "#3BB273" )
 
 # ---- 3. Merge with sample metadata ----
 # metadata should have a SampleID column matching otu_table rownames,
@@ -1259,7 +1429,8 @@ pcoa1=ggplot(pca_scores, aes(x = PC1, y = PC2, fill = strain_26)) +
   theme_classic2(base_size = 14) +
   geom_path(data = ellipse_df, aes(x = PC1, y = PC2),
             linewidth = 0.3) +
-  scale_fill_manual(values=strain_colors) + theme(legend.position = 'none')
+  scale_fill_manual(values=strain_colors) + 
+  theme(legend.position = 'none')
 pcoa1
 ```
 
@@ -1324,7 +1495,7 @@ ellipse_df <- pca_scores %>%
   ungroup()
 
 pcoa2=ggplot(pca_scores, aes(x = PC1, y = PC2, fill = strain_26)) +
-  geom_point(size = 3, alpha = 0.8, pch=23) +
+  geom_point(size = 3, alpha = 0.8, pch=21) +
   labs(
     x = paste0("PC1 (", var_explained[1], "%)"),
     y = paste0("PC2 (", var_explained[2], "%)"),
@@ -1849,5 +2020,845 @@ cowww=cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure,ncol =4)
 #cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure, 
   #                 ncol=1)
 
+
+```
+
+
+# diff abundance
+## blanks vs non blanks
+
+https://r-from-a-learners-perspective.readthedocs.io/en/latest/part5/
+
+```{r}
+diatom_cell=subset_samples(cg, extract=="WGA")
+diatom_cell_deseq2=phyloseq_to_deseq2(diatom_cell, design=~definition)
+dds <- DESeq(diatom_cell_deseq2, test="Wald", fitType="parametric")
+ddsLRT <- DESeq(diatom_cell_deseq2, test="LRT", reduced= ~ 1)
+
+
+res = results(dds, cooksCutoff = FALSE)
+alpha = 0.001
+sigtab = res[which(res$padj < alpha), ]
+# sigtab = sigtab[which(abs(sigtab$log2FoldChange) > 2), ] # sometimes you want to report the taxa that had higher log2FoldChange than 2
+sigtab
+sigtab = cbind(as(sigtab, "data.frame"), as(tax_table(diatom_cell)[rownames(sigtab), ], "matrix"))
+head(sigtab)
+
+
+otu1=sigtab$strain
+diatom_cell_abund=transform_sample_counts(diatom_cell, function(x) x/sum(x))
+sub1=subset_taxa(diatom_cell_abund, strain %in% otu1)
+plot_bar(sub1, fill="strain") +facet_wrap(~treatment_26, scales='free')
+
+
+x = tapply(sigtab$log2FoldChange, sigtab$class, function(x) max(x))
+x = sort(x, TRUE)
+sigtab$Phylum = factor(as.character(sigtab$class), levels=names(x))
+
+x = tapply(sigtab$log2FoldChange, sigtab$species, function(x) max(x))
+x = sort(x, TRUE)
+sigtab$Genus = factor(as.character(sigtab$species), levels=names(x))
+
+
+ggbarplot(sigtab, x = "strain", y = "log2FoldChange",
+          fill = "Genus",           # change fill color by mpg_level
+          color = "white",            # Set bar border colors to white
+          palette = "jco",            # jco journal color palett. see ?ggpar
+          sort.val = "asc",          # Sort the value in ascending order
+          sort.by.groups = FALSE,     # Don't sort inside each group
+          ylab = "log2FoldChange",
+          legend.title = "Phylum",
+          rotate = TRUE,
+          ggtheme = theme_classic()
+)
+
+
+
+
+
+
+
+```
+
+## strains against each other 
+```{r}
+diatom=subset_samples(cg, diatom_control=='diatom')
+diatom_cell=subset_samples(diatom, extract=="WGA")
+
+diatom_cell_deseq2=phyloseq_to_deseq2(diatom_cell, design=~strain_26)
+dds <- DESeq(diatom_cell_deseq2, test="Wald", fitType="parametric")
+ddsLRT <- DESeq(diatom_cell_deseq2, test="LRT", reduced= ~ 1)
+
+## A1 vs A2
+res = results(dds, cooksCutoff = FALSE, contrast=c("strain_26", "A1", "A2"))
+alpha = 0.001
+sigtab_a1a2 = res[which(res$padj < alpha), ]
+# sigtab = sigtab[which(abs(sigtab$log2FoldChange) > 2), ] # sometimes you want to report the taxa that had higher log2FoldChange than 2
+sigtab_a1a2
+
+sigtab_a1a2 = cbind(as(sigtab_a1a2, "data.frame"), as(tax_table(diatom_cell)[rownames(sigtab_a1a2), ], "matrix"))
+head(sigtab_a1a2)
+dim(sigtab_a1a2)
+otu1=sigtab_a1a2$strain
+
+
+
+
+## A1 vs B1
+res = results(dds, cooksCutoff = FALSE, contrast=c("strain_26", "A1", "B1"))
+alpha = 0.001
+sigtab_a1b1 = res[which(res$padj < alpha), ]
+# sigtab = sigtab[which(abs(sigtab$log2FoldChange) > 2), ] # sometimes you want to report the taxa that had higher log2FoldChange than 2
+sigtab_a1b1
+sigtab_a1b1 = cbind(as(sigtab_a1b1, "data.frame"), as(tax_table(diatom_cell)[rownames(sigtab_a1b1), ], "matrix"))
+head(sigtab_a1b1)
+dim(sigtab_a1b1)
+otu2=sigtab_a1b1$strain
+
+## A1 vs C1
+res = results(dds, cooksCutoff = FALSE, contrast=c("strain_26", "A1", "C1"))
+alpha = 0.001
+sigtab_a1c1 = res[which(res$padj < alpha), ]
+# sigtab = sigtab[which(abs(sigtab$log2FoldChange) > 2), ] # sometimes you want to report the taxa that had higher log2FoldChange than 2
+sigtab_a1c1
+sigtab_a1c1 = cbind(as(sigtab_a1c1, "data.frame"), as(tax_table(diatom_cell)[rownames(sigtab_a1c1), ], "matrix"))
+head(sigtab_a1c1)
+dim(sigtab_a1c1)
+otu3=sigtab_a1c1$strain
+
+
+## A2 vs B1
+res = results(dds, cooksCutoff = FALSE, contrast=c("strain_26", "A2", "B1"))
+alpha = 0.001
+sigtab_a2b1 = res[which(res$padj < alpha), ]
+# sigtab = sigtab[which(abs(sigtab$log2FoldChange) > 2), ] # sometimes you want to report the taxa that had higher log2FoldChange than 2
+sigtab_a2b1
+sigtab_a2b1 = cbind(as(sigtab_a2b1, "data.frame"), as(tax_table(diatom_cell)[rownames(sigtab_a2b1), ], "matrix"))
+head(sigtab_a2b1)
+dim(sigtab_a2b1)
+otu4=sigtab_a2b1$strain
+
+## A2 vs C1
+res = results(dds, cooksCutoff = FALSE, contrast=c("strain_26", "A2", "C1"))
+alpha = 0.001
+sigtab_a2c1 = res[which(res$padj < alpha), ]
+# sigtab = sigtab[which(abs(sigtab$log2FoldChange) > 2), ] # sometimes you want to report the taxa that had higher log2FoldChange than 2
+sigtab_a2c1
+sigtab_a2c1 = cbind(as(sigtab_a2c1, "data.frame"), as(tax_table(diatom_cell)[rownames(sigtab_a2c1), ], "matrix"))
+head(sigtab_a2c1)
+dim(sigtab_a2c1)
+otu5=sigtab_a2c1$strain
+
+## B1 vs C1
+res = results(dds, cooksCutoff = FALSE, contrast=c("strain_26", "B1", "C1"))
+alpha = 0.001
+sigtab_b1c1 = res[which(res$padj < alpha), ]
+# sigtab = sigtab[which(abs(sigtab$log2FoldChange) > 2), ] # sometimes you want to report the taxa that had higher log2FoldChange than 2
+sigtab_b1c1
+sigtab_b1c1 = cbind(as(sigtab_b1c1, "data.frame"), as(tax_table(diatom_cell)[rownames(sigtab_b1c1), ], "matrix"))
+head(sigtab_b1c1)
+dim(sigtab_b1c1)
+otu6=sigtab_b1c1$strain
+
+```
+
+
+### plotting 
+```{r}
+
+llama=c(otu1,otu2,otu3,otu4,otu5,otu6)
+llama_pj=subset_taxa(cg, strain %in% llama)
+clamm=data.frame(tax_table(llama_pj))
+levels(as.factor(clamm$class))
+
+
+
+
+colors2=c("Alphaproteobacteria" = "#88CCEE",
+          "Bacteroidetes_incertae_sedis" = "#44AA99",
+          "Bacteroidia" = "#44AA99",
+          "Betaproteobacteria" = "#117733",
+          "Cytophagia"="#332288",
+          "Deltaproteobacteria" ="#DDCC77",
+          "Epsilonproteobacteria" = "#999933",
+          "Flavobacteriia" ="#CC6677",
+          "Gammaproteobacteria" ="#882255",
+          "Opitutae" ="#AA4499",
+          "Sphingobacteriia" ="#DDDDDD",
+          "Verrucomicrobiae" = "#6699CC",
+          "WPS-2_genera_incertae_sedis", "#888888")
+
+diatom_cell=subset_samples(diatom, extract=="WGA")
+diatom_cell_abund=transform_sample_counts(diatom_cell, function(x) x/sum(x))
+diatom_cell_abund_otu=subset_taxa(diatom_cell_abund, strain %in% llama)
+plot_bar(diatom_cell_abund_otu, fill='species')  +facet_grid(~strain_26,scales='free') + theme(legend.position = 'bottom')
+
+p <- ggplot(sigtab_a1a2, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "Genus", title="A1 vs A2") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )  + theme(legend.position = 'none')
+p
+
+
+
+p2 <- ggplot(sigtab_a1b1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "Genus", title="A1 vs B1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p2
+
+p3 <- ggplot(sigtab_a1c1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "Genus", title="A1 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p3
+
+
+p4 <- ggplot(sigtab_a2b1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "Genus", title="A2 vs B1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p4
+
+p5 <- ggplot(sigtab_a2c1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "Genus", title="A2 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p5
+
+
+p6 <- ggplot(sigtab_b1c1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "Genus", title="B1 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p6
+
+cowplot::plot_grid(p,p2,p3, p4, p5, p6, nrow=2)
+
+```
+### plotting 
+
+```{r}
+
+llama=c(otu1,otu2,otu3,otu4,otu5,otu6)
+llama_pj=subset_taxa(cg, strain %in% llama)
+clamm=data.frame(tax_table(llama_pj))
+levels(as.factor(clamm$class))
+
+
+
+
+colors2=c("Alphaproteobacteria" = "#88CCEE",
+          "Bacteroidetes_incertae_sedis" = "#44AA99",
+          "Bacteroidia" = "#44AA99",
+          "Betaproteobacteria" = "#117733",
+          "Cytophagia"="#332288",
+          "Deltaproteobacteria" ="#DDCC77",
+          "Epsilonproteobacteria" = "#999933",
+          "Flavobacteriia" ="#CC6677",
+          "Gammaproteobacteria" ="#882255",
+          "Opitutae" ="#AA4499",
+          "Sphingobacteriia" ="#DDDDDD",
+          "Verrucomicrobiae" = "#6699CC",
+          "WPS-2_genera_incertae_sedis", "#888888")
+
+diatom_cell=subset_samples(diatom, extract=="WGA")
+diatom_cell_abund=transform_sample_counts(diatom_cell, function(x) x/sum(x))
+diatom_cell_abund_otu=subset_taxa(diatom_cell_abund, strain %in% llama)
+plot_bar(diatom_cell_abund_otu, fill='species')  +facet_grid(~strain_26,scales='free') + theme(legend.position = 'bottom')
+
+
+genus_order <- sigtab_a1a2 %>%
+  group_by(genus) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(genus)
+ 
+sigtab_a1a2$genus <- factor(sigtab_a1a2$genus, levels = genus_order)
+sigtab_a1a2$class <- factor(sigtab_a1a2$class)  # one color per taxonomic class
+
+p <- ggplot(sigtab_a1a2, aes(x = log2FoldChange, y = genus, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "Genus", title="A1 vs A2") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )  + theme(legend.position = 'none')
+p
+
+
+genus_order <- sigtab_a1b1 %>%
+  group_by(genus) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(genus)
+ 
+sigtab_a1b1$genus <- factor(sigtab_a1b1$genus, levels = genus_order)
+sigtab_a1b1$class <- factor(sigtab_a1b1$class)  # one color per taxonomic class
+
+p2 <- ggplot(sigtab_a1b1, aes(x = log2FoldChange, y = genus, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "Genus", title="A1 vs B1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p2
+
+
+genus_order <- sigtab_a1c1 %>%
+  group_by(genus) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(genus)
+ 
+sigtab_a1c1$genus <- factor(sigtab_a1c1$genus, levels = genus_order)
+sigtab_a1c1$class <- factor(sigtab_a1c1$class)  # one color per taxonomic class
+
+p3 <- ggplot(sigtab_a1c1, aes(x = log2FoldChange, y = genus, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "Genus", title="A1 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p3
+
+genus_order <- sigtab_a2b1 %>%
+  group_by(genus) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(genus)
+ 
+sigtab_a2b1$genus <- factor(sigtab_a2b1$genus, levels = genus_order)
+sigtab_a2b1$class <- factor(sigtab_a2b1$class)  # one color per taxonomic class
+p4 <- ggplot(sigtab_a2b1, aes(x = log2FoldChange, y = genus, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "Genus", title="A2 vs B1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p4
+genus_order <- sigtab_a2c1 %>%
+  group_by(genus) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(genus)
+ 
+sigtab_a2c1$genus <- factor(sigtab_a2c1$genus, levels = genus_order)
+sigtab_a2c1$class <- factor(sigtab_a2c1$class)  # one color per taxonomic class
+p5 <- ggplot(sigtab_a2c1, aes(x = log2FoldChange, y = genus, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "Genus", title="A2 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p5
+genus_order <- sigtab_b1c1 %>%
+  group_by(genus) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(genus)
+ 
+sigtab_b1c1$genus <- factor(sigtab_b1c1$genus, levels = genus_order)
+sigtab_b1c1$class <- factor(sigtab_b1c1$class)  # one color per taxonomic class
+
+p6 <- ggplot(sigtab_b1c1, aes(x = log2FoldChange, y = genus, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "Genus", title="B1 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p6
+
+cowplot::plot_grid(p,p2,p3, p4, p5, p6, nrow=2)
+
+```
+
+
+### plotting godo
+
+```{r}
+
+llama=c(otu1,otu2,otu3,otu4,otu5,otu6)
+llama_pj=subset_taxa(cg, strain %in% llama)
+clamm=data.frame(tax_table(llama_pj))
+levels(as.factor(clamm$class))
+
+
+
+
+colors2=c("Alphaproteobacteria" = "#88CCEE",
+          "Bacteroidetes_incertae_sedis" = "#44AA99",
+          "Bacteroidia" = "#44AA99",
+          "Betaproteobacteria" = "#117733",
+          "Cytophagia"="#332288",
+          "Deltaproteobacteria" ="#DDCC77",
+          "Epsilonproteobacteria" = "#999933",
+          "Flavobacteriia" ="#CC6677",
+          "Gammaproteobacteria" ="#882255",
+          "Opitutae" ="#AA4499",
+          "Sphingobacteriia" ="#DDDDDD",
+          "Verrucomicrobiae" = "#6699CC",
+          "WPS-2_genera_incertae_sedis", "#888888")
+
+diatom_cell=subset_samples(diatom, extract=="WGA")
+diatom_cell_abund=transform_sample_counts(diatom_cell, function(x) x/sum(x))
+diatom_cell_abund_otu=subset_taxa(diatom_cell_abund, strain %in% llama)
+plot_bar(diatom_cell_abund_otu, fill='species')  +facet_grid(~strain_26,scales='free') + theme(legend.position = 'bottom')
+
+
+genus_order <- sigtab_a1a2 %>%
+  group_by(species) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(species)
+ 
+sigtab_a1a2$species <- factor(sigtab_a1a2$species, levels = genus_order)
+sigtab_a1a2$class <- factor(sigtab_a1a2$class)  # one color per taxonomic class
+
+p <- ggplot(sigtab_a1a2, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "", title="A1 vs A2") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )  + theme(legend.position = 'none')
+p
+
+
+genus_order <- sigtab_a1b1 %>%
+  group_by(species) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(species)
+ 
+sigtab_a1b1$species <- factor(sigtab_a1b1$species, levels = genus_order)
+sigtab_a1b1$class <- factor(sigtab_a1b1$class)  # one color per taxonomic class
+
+p2 <- ggplot(sigtab_a1b1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "", title="A1 vs B1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p2
+
+
+genus_order <- sigtab_a1c1 %>%
+  group_by(species) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(species)
+ 
+sigtab_a1c1$species <- factor(sigtab_a1c1$species, levels = genus_order)
+sigtab_a1c1$class <- factor(sigtab_a1c1$class)  # one color per taxonomic class
+
+p3 <- ggplot(sigtab_a1c1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "", title="A1 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p3
+
+genus_order <- sigtab_a2b1 %>%
+  group_by(species) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(species)
+ 
+sigtab_a2b1$species <- factor(sigtab_a2b1$species, levels = genus_order)
+sigtab_a2b1$class <- factor(sigtab_a2b1$class)  # one color per taxonomic class
+p4 <- ggplot(sigtab_a2b1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "", title="A2 vs B1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p4
+
+
+genus_order <- sigtab_a2c1 %>%
+  group_by(species) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(species)
+ 
+sigtab_a2c1$species <- factor(sigtab_a2c1$species, levels = genus_order)
+sigtab_a2c1$class <- factor(sigtab_a2c1$class)  # one color per taxonomic class
+p5 <- ggplot(sigtab_a2c1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "", title="A2 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p5
+
+genus_order <- sigtab_b1c1 %>%
+  group_by(species) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(species)
+ 
+sigtab_b1c1$species <- factor(sigtab_b1c1$species, levels = genus_order)
+sigtab_b1c1$class <- factor(sigtab_b1c1$class)  # one color per taxonomic class
+
+p6 <- ggplot(sigtab_b1c1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "", title="B1 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p6
+
+cowplot::plot_grid(p,p2,p3, p4, p5, p6, nrow=2, align = "hv", 
+          axis = "tblr", labels='auto')
+
+
+co1=cowplot::plot_grid(p,p2,p3, p4, p5, p6, nrow=2, align = "hv", 
+          axis = "tblr",labels='auto')
+
+ggsave(plot=co1, 'diff_abund.svg', dpi=300, height=9.5, width=15)
+
+```
+
+
+### plotting godo
+
+```{r}
+
+llama=c(otu1,otu2,otu3,otu4,otu5,otu6)
+llama_pj=subset_taxa(cg, strain %in% llama)
+clamm=data.frame(tax_table(llama_pj))
+levels(as.factor(clamm$class))
+
+
+tol_muted_15 <- c(
+  "#88CCEE", "#44AA99", "#117733", "#332288",
+  "#DDCC77", "#999933", "#CC6677", "#882255",
+  "#AA4499", "#DDDDDD", "#6699CC",
+  "#E69F00", "#F0E442", "black"
+)
+
+
+
+keep_classes <- c("Aestuariibacter" = "#88CCEE", "Aquibacter" = "#44AA99","Candidatus Pelagibacter" = "#117733", 
+                  "Cellulophaga" = "#332288",
+                  "Marinobacterium" = "#DDCC77", "Marinomonas" = "#999933","Neptuniibacter" = "#CC6677", "Other" = 'black',
+                  "Owenweeksia" = "#882255", "Polaribacter" = "#AA4499","Pseudohongiella" = "#DDDDDD",
+                  "Tenacibaculum" = "#6699CC", "Vibrio" = "#E69F00",
+                  "Wandonia" ="#F0E442", "Colwellia" = 'white')
+
+
+keep_classes <- c("Aestuariibacter", "Aquibacter","Candidatus Pelagibacter", 
+                  "Cellulophaga",
+                  "Marinobacterium", "Marinomonas","Neptuniibacter", "Other",
+                  "Owenweeksia", "Polaribacter","Pseudohongiella",
+                  "Tenacibaculum", "Vibrio",
+                  "Wandonia")
+
+diatom_cell=subset_samples(diatom, extract=="WGA")
+diatom_cell_abund=transform_sample_counts(diatom_cell, function(x) x/sum(x))
+diatom_cell_abund_otu=subset_taxa(diatom_cell_abund, strain %in% llama)
+plot_bar(diatom_cell_abund_otu, fill='species')  +facet_grid(~strain_26,scales='free') + theme(legend.position = 'bottom')
+
+
+genus_order <- sigtab_a1a2 %>%
+  group_by(species) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(species)
+ 
+sigtab_a1a2$species <- factor(sigtab_a1a2$species, levels = genus_order)
+sigtab_a1a2$class <- factor(sigtab_a1a2$class)  # one color per taxonomic class
+
+p <- ggplot(sigtab_a1a2, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "", title="A1 vs A2") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )  + theme(legend.position = 'none')
+p
+
+
+genus_order <- sigtab_a1b1 %>%
+  group_by(species) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(species)
+ 
+sigtab_a1b1$species <- factor(sigtab_a1b1$species, levels = genus_order)
+sigtab_a1b1$class <- factor(sigtab_a1b1$class)  # one color per taxonomic class
+
+p2 <- ggplot(sigtab_a1b1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "", title="A1 vs B1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p2
+
+
+genus_order <- sigtab_a1c1 %>%
+  group_by(species) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(species)
+ 
+sigtab_a1c1$species <- factor(sigtab_a1c1$species, levels = genus_order)
+sigtab_a1c1$class <- factor(sigtab_a1c1$class)  # one color per taxonomic class
+
+p3 <- ggplot(sigtab_a1c1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "", title="A1 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p3
+
+genus_order <- sigtab_a2b1 %>%
+  group_by(species) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(species)
+ 
+sigtab_a2b1$species <- factor(sigtab_a2b1$species, levels = genus_order)
+sigtab_a2b1$class <- factor(sigtab_a2b1$class)  # one color per taxonomic class
+p4 <- ggplot(sigtab_a2b1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "", title="A2 vs B1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p4
+
+
+genus_order <- sigtab_a2c1 %>%
+  group_by(species) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(species)
+ 
+sigtab_a2c1$species <- factor(sigtab_a2c1$species, levels = genus_order)
+sigtab_a2c1$class <- factor(sigtab_a2c1$class)  # one color per taxonomic class
+p5 <- ggplot(sigtab_a2c1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "", title="A2 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p5
+
+genus_order <- sigtab_b1c1 %>%
+  group_by(species) %>%
+  summarize(med_lfc = median(log2FoldChange, na.rm = TRUE)) %>%
+  arrange(med_lfc) %>%
+  pull(species)
+ 
+sigtab_b1c1$species <- factor(sigtab_b1c1$species, levels = genus_order)
+sigtab_b1c1$class <- factor(sigtab_b1c1$class)  # one color per taxonomic class
+
+p6 <- ggplot(sigtab_b1c1, aes(x = log2FoldChange, y = species, fill = class)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 3, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = colors2, name = "Class") +
+  labs(x = "log2FoldChange", y = "", title="B1 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )+ theme(legend.position = 'none')
+p6
+
+cowplot::plot_grid(p,p2,p3, p4, p5, p6, nrow=2, align = "hv", 
+          axis = "tblr", labels='auto')
+
+
+co1=cowplot::plot_grid(p,p2,p3, p4, p5, p6, nrow=2, align = "hv", 
+          axis = "tblr",labels='auto')
+
+ggsave(plot=co1, 'diff_abund.svg', dpi=300, height=9.5, width=15)
+
+```
+
+
+### plotting  bar plot
+
+```{r}
+
+llama=c(otu1,otu2,otu3,otu4,otu5,otu6)
+llama_pj=subset_taxa(cg, strain %in% llama)
+clamm=data.frame(tax_table(llama_pj))
+levels(as.factor(clamm$class))
+
+colors2=c("Alphaproteobacteria" = "#88CCEE",
+          "Bacteroidetes_incertae_sedis" = "#44AA99",
+          "Bacteroidia" = "#44AA99",
+          "Betaproteobacteria" = "#117733",
+          "Cytophagia"="#332288",
+          "Deltaproteobacteria" ="#DDCC77",
+          "Epsilonproteobacteria" = "#999933",
+          "Flavobacteriia" ="#CC6677",
+          "Gammaproteobacteria" ="#882255",
+          "Opitutae" ="#AA4499",
+          "Sphingobacteriia" ="#DDDDDD",
+          "Verrucomicrobiae" = "#6699CC",
+          "WPS-2_genera_incertae_sedis", "#888888")
+
+diatom_cell=subset_samples(diatom, extract=="WGA")
+diatom_cell_abund=transform_sample_counts(diatom_cell, function(x) x/sum(x))
+diatom_cell_abund_otu=subset_taxa(diatom_cell_abund, strain %in% llama)
+plot_bar(diatom_cell_abund_otu, fill='class')  +facet_grid(~strain_26,scales='free') + theme(legend.position = 'bottom') + scale_fill_manual(values=colors2)
+
+glum=taxa_glom(diatom_cell_abund_otu, )
 
 ```
