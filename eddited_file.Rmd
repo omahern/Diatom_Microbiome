@@ -90,6 +90,9 @@ ggplot1=ggplot(subset, aes(x=strain, y=growth_rate,
 ggplot1
 
 
+compare_means(growth_rate~culture, group.by='strain_26',data=subset, 'anova',paired=TRUE,p.adjust.method = 'none')
+
+
 ```
 
 #### with fv.fm
@@ -99,9 +102,7 @@ ggplot1
 read<-read.csv(file="datafiles/TR_Growth_rates_Feb16.csv",
                header=T,row.names=1)
 dim(read)
-head(read)
-
-read2=subset(read, strain!="NB4" & strain !="NB6" & strain !="RA4" & strain !="YC5")
+#head(read)
 
 gplot2=ggplot(read, 
              aes(x=strain, y=fv,
@@ -125,6 +126,9 @@ cowplot::plot_grid(ggplot1, gplot2,
                    axis='l',
                    byrow=TRUE, labels='auto')
        #           rel_widths = c(1.7,1))
+
+
+compare_means(fv~culture, group.by='strain',data=read, 'anova',paired=TRUE,p.adjust.method = 'none')
 
 ```
 
@@ -213,7 +217,6 @@ cowplot::plot_grid(ggplot1,  gplot_counts,   gplot2,
 
 ```
 
-##### stats of fv/fm
 
 
 
@@ -1283,6 +1286,8 @@ legend(-1, 0,
 }
 
 
+anosim(bray, sample_data(diatom_co)$strain_26)
+adonis2(bray~sample_data(diatom_co)$strain_26)
 
 ```
 
@@ -1670,13 +1675,21 @@ tol_muted <- c(
   "#AA4499", "#DDDDDD", "#6699CC", "#888888", 'black'
 )
 
+tol_muted_15 <- c(
+  "#88CCEE", "#44AA99", "#117733", "#332288",
+  "#DDCC77", "#999933", "#CC6677", "#882255",
+  "#AA4499", "#DDDDDD", "#6699CC",
+  "#E69F00",  "black"
+)
+
+
 a1_figure=ggplot(a1_summed, aes(x = Sample, y = Abundance, alluvium = family, stratum = family, fill = family)) +
   geom_flow(alpha = 0.7,na.rm=T) +
   geom_stratum() +
   theme_minimal(base_size = 12) +
   theme(legend.position = 'none') +
   xlab("A1") +
-  scale_fill_manual(values = tol_muted) +
+  scale_fill_manual(values = tol_muted_15) +
   ylab("Relative Abundance")
 a1_figure
 
@@ -1717,7 +1730,7 @@ a2_figure=ggplot(a2_summed, aes(x = Sample, y = Abundance, alluvium = family, st
   theme_minimal(base_size = 12) +
   theme(legend.position = 'none') +
   xlab("A2") +
-  scale_fill_manual(values = tol_muted) +
+  scale_fill_manual(values = tol_muted_15) +
   ylab("Relative Abundance")
 a2_figure
 
@@ -1744,7 +1757,7 @@ b1_figure=ggplot(b1_summed, aes(x = Sample, y = Abundance, alluvium = family, st
   theme_minimal(base_size = 12) +
   theme(legend.position = 'none') +
   xlab("B1") +
-  scale_fill_manual(values = tol_muted) +
+  scale_fill_manual(values = tol_muted_15) +
   ylab("Relative Abundance")
 b1_figure
 
@@ -1773,13 +1786,13 @@ c1_figure=ggplot(c1_summed, aes(x = Sample, y = Abundance, alluvium = family, st
   theme_minimal(base_size = 12) +
   theme(legend.position = 'none') +
   xlab("C1") +
-  scale_fill_manual(values = tol_muted) +
+  scale_fill_manual(values = tol_muted_15) +
   ylab("Relative Abundance")
 c1_figure
 
 cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure)
-cowww=cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure,ncol =4)
-
+cowww=cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure,ncol =4, nrow=1)
+cowww
 #ggsave('ribbon_plot.svg', plot=cowww, dpi=300, height=4, width=16)
 #cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure, 
  #                  ncol=1)
@@ -2024,62 +2037,8 @@ cowww=cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure,ncol =4)
 ```
 
 
-# diff abundance
-## blanks vs non blanks
-
-https://r-from-a-learners-perspective.readthedocs.io/en/latest/part5/
-
-```{r}
-diatom_cell=subset_samples(cg, extract=="WGA")
-diatom_cell_deseq2=phyloseq_to_deseq2(diatom_cell, design=~definition)
-dds <- DESeq(diatom_cell_deseq2, test="Wald", fitType="parametric")
-ddsLRT <- DESeq(diatom_cell_deseq2, test="LRT", reduced= ~ 1)
-
-
-res = results(dds, cooksCutoff = FALSE)
-alpha = 0.001
-sigtab = res[which(res$padj < alpha), ]
-# sigtab = sigtab[which(abs(sigtab$log2FoldChange) > 2), ] # sometimes you want to report the taxa that had higher log2FoldChange than 2
-sigtab
-sigtab = cbind(as(sigtab, "data.frame"), as(tax_table(diatom_cell)[rownames(sigtab), ], "matrix"))
-head(sigtab)
-
-
-otu1=sigtab$strain
-diatom_cell_abund=transform_sample_counts(diatom_cell, function(x) x/sum(x))
-sub1=subset_taxa(diatom_cell_abund, strain %in% otu1)
-plot_bar(sub1, fill="strain") +facet_wrap(~treatment_26, scales='free')
-
-
-x = tapply(sigtab$log2FoldChange, sigtab$class, function(x) max(x))
-x = sort(x, TRUE)
-sigtab$Phylum = factor(as.character(sigtab$class), levels=names(x))
-
-x = tapply(sigtab$log2FoldChange, sigtab$species, function(x) max(x))
-x = sort(x, TRUE)
-sigtab$Genus = factor(as.character(sigtab$species), levels=names(x))
-
-
-ggbarplot(sigtab, x = "strain", y = "log2FoldChange",
-          fill = "Genus",           # change fill color by mpg_level
-          color = "white",            # Set bar border colors to white
-          palette = "jco",            # jco journal color palett. see ?ggpar
-          sort.val = "asc",          # Sort the value in ascending order
-          sort.by.groups = FALSE,     # Don't sort inside each group
-          ylab = "log2FoldChange",
-          legend.title = "Phylum",
-          rotate = TRUE,
-          ggtheme = theme_classic()
-)
-
-
-
-
-
-
-
-```
-
+# diff abundance with Deseq2
+following this [tutorial](https://r-from-a-learners-perspective.readthedocs.io/en/latest/part5/)
 ## strains against each other 
 ```{r}
 diatom=subset_samples(cg, diatom_control=='diatom')
@@ -2862,3 +2821,306 @@ plot_bar(diatom_cell_abund_otu, fill='class')  +facet_grid(~strain_26,scales='fr
 glum=taxa_glom(diatom_cell_abund_otu, )
 
 ```
+
+
+### plot deseq2 with data subset
+```{r}
+## color palettes and misc
+tol_muted_15 <- c(
+  "#88CCEE", "#44AA99", "#117733", "#332288",
+  "#DDCC77", "#999933", "#CC6677", "#882255",
+  "#AA4499", "#DDDDDD", "#6699CC",
+  "#E69F00",  "black")
+
+tol_muted <- c(
+  "#88CCEE", "#44AA99", "#117733", "#332288",
+  "#DDCC77", "#999933", "#CC6677", "#882255",
+  "#AA4499", "#DDDDDD", "#6699CC", "#888888", 'black'
+)
+```
+
+```{r}
+keep_order <- c("Alteromonadales", "Cytophagales", "Flavobacteriales", "Gammaproteobacteria_incertae_sedis", "Methylophilales", "Oceanospirillales", "Pseudomonadales", "Rhodobacterales","Rhodospirillales", "SAR11","Vibrionales", "WPS-2_genera_incertae_sedis")
+
+keep_order_sort <- c("Alteromonadales", "Cytophagales", "Flavobacteriales", "Gammaproteobacteria_incertae_sedis", "Methylophilales", "Oceanospirillales", "Pseudomonadales", "Rhodobacterales","Rhodospirillales", "SAR11","Vibrionales", "WPS-2_genera_incertae_sedis", "Other")
+keep_order_colors <- c("Alteromonadales" = "#88CCEE", 
+                       "Cytophagales" ="#44AA99", 
+                       "Flavobacteriales" ="#117733",
+                  "Gammaproteobacteria_incertae_sedis" ="#332288", 
+                  "Methylophilales" ="#DDCC77",
+                  "Oceanospirillales" ="#999933", 
+                  "Pseudomonadales"="#CC6677",
+                  "Rhodobacterales" ="#882255",
+                  "Rhodospirillales" ="#AA4499", 
+                  "SAR11" ="#DDDDDD",
+                  "Vibrionales" ="#6699CC", 
+                  "WPS-2_genera_incertae_sedis" ="#888888",
+                  "Other" ="black")
+
+
+sigtab_a1a2_edit <- sigtab_a1a2 %>%
+  mutate(
+    family_group = if_else(family %in% keep_order, family, "Other"),
+    family_group = factor(family_group, levels = keep_order_sort, ordered = TRUE)
+  )
+
+p <- ggplot(sigtab_a1a2_edit, aes(x = log2FoldChange, y = family_group, fill = family_group)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 5, alpha = 0.9, pch=21) +
+  scale_fill_manual(values = keep_order_colors, name = "Order") +
+  labs(x = "log2FoldChange", y = "", title="A1 vs A2") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )  + theme(legend.position = 'none')
+p
+
+p <- ggplot(sigtab_a1a2_edit, aes(x = log2FoldChange, y = family_group, fill = family_group)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = keep_order_colors, name = "Order") +
+  scale_y_discrete(drop = FALSE) +   # <-- keep all keep_order_sort levels, even empty ones
+  labs(x = "log2FoldChange", y = "", title = "A1 vs A2") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  ) + theme(legend.position = 'none')+scale_y_discrete(limits = rev(keep_order_sort))
+
+
+sigtab_a1b1_edit <- sigtab_a1b1 %>%
+  mutate(
+    family_group = if_else(family %in% keep_order, family, "Other"),
+    family_group = factor(family_group, levels = keep_order_sort, ordered = TRUE)
+  )
+
+p2 <- ggplot(sigtab_a1b1_edit, aes(x = log2FoldChange, y = family_group, fill = family_group)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = keep_order_colors, name = "Order") +
+  scale_y_discrete(drop = FALSE) +   # <-- keep all keep_order_sort levels, even empty ones
+  labs(x = "log2FoldChange", y = "", title = "A1 vs B1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  ) + theme(legend.position = 'none')+scale_y_discrete(limits = rev(keep_order_sort))
+
+
+
+cowplot::plot_grid(p,p2)
+
+
+
+sigtab_a1c1_edit <- sigtab_a1c1 %>%
+  mutate(
+    family_group = if_else(family %in% keep_order, family, "Other"),
+    family_group = factor(family_group, levels = keep_order_sort, ordered = TRUE)
+  )
+
+p3 <- ggplot(sigtab_a1c1_edit, aes(x = log2FoldChange, y = family_group, fill = family_group)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = keep_order_colors, name = "Order") +
+  scale_y_discrete(drop = FALSE) +   # <-- keep all keep_order_sort levels, even empty ones
+  labs(x = "log2FoldChange", y = "", title = "A1 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  ) + theme(legend.position = 'none')+scale_y_discrete(limits = rev(keep_order_sort))
+
+p3
+
+
+sigtab_a2b1_edit <- sigtab_a2b1 %>%
+  mutate(
+    family_group = if_else(family %in% keep_order, family, "Other"),
+    family_group = factor(family_group, levels = keep_order_sort, ordered = TRUE)
+  )
+
+p4 <- ggplot(sigtab_a2b1_edit, aes(x = log2FoldChange, y = family_group, fill = family_group)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = keep_order_colors, name = "Order") +
+  scale_y_discrete(drop = FALSE) +   # <-- keep all keep_order_sort levels, even empty ones
+  labs(x = "log2FoldChange", y = "", title = "A2 vs B1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  ) + theme(legend.position = 'none')+scale_y_discrete(limits = rev(keep_order_sort))
+
+p4
+
+
+sigtab_a2c1_edit <- sigtab_a2c1 %>%
+  mutate(
+    family_group = if_else(family %in% keep_order, family, "Other"),
+    family_group = factor(family_group, levels = keep_order_sort, ordered = TRUE)
+  )
+
+p5 <- ggplot(sigtab_a2c1_edit, aes(x = log2FoldChange, y = family_group, fill = family_group)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = keep_order_colors, name = "Order") +
+  scale_y_discrete(drop = FALSE) +   # <-- keep all keep_order_sort levels, even empty ones
+  labs(x = "log2FoldChange", y = "", title = "A2 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  ) + theme(legend.position = 'none')+scale_y_discrete(limits = rev(keep_order_sort))
+
+p5
+
+
+sigtab_b1c1_edit <- sigtab_b1c1 %>%
+  mutate(
+    family_group = if_else(family %in% keep_order, family, "Other"),
+    family_group = factor(family_group, levels = keep_order_sort, ordered = TRUE)
+  )
+
+p6 <- ggplot(sigtab_b1c1_edit, aes(x = log2FoldChange, y = family_group, fill = family_group)) +
+  geom_vline(xintercept = 0, color = "grey60", linetype = "solid") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = keep_order_colors, name = "Order") +
+  scale_y_discrete(drop = FALSE) +   # <-- keep all keep_order_sort levels, even empty ones
+  labs(x = "log2FoldChange", y = "", title = "B1 vs C1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  ) + theme(legend.position = 'none') +scale_y_discrete(limits = rev(keep_order_sort))
+
+p6
+
+
+
+co1=cowplot::plot_grid(p,p2,p3, p4, p5, p6, nrow=2, align = "hv", 
+          axis = "tblr",labels='auto')
+co1
+
+#ggsave(plot=co1, 'diff_abund.svg', dpi=300, height=9.5, width=15)
+
+
+```
+
+
+#### get ones specific ot A1 
+```{r}
+
+sigtab_a1a2_edit
+
+sigtab_a1a2_edit_sub=subset(sigtab_a1a2_edit, log2FoldChange >= 0)
+sigtab_a1b1_edit_sub=subset(sigtab_a1b1_edit, log2FoldChange >= 0)
+sigtab_a1c1_edit_sub=subset(sigtab_a1c1_edit, log2FoldChange >= 0)
+
+aa=intersect(sigtab_a1a2_edit_sub$strain, sigtab_a1b1_edit_sub$strain)
+aa2=intersect(sigtab_a1a2_edit_sub$strain, sigtab_a1c1_edit_sub$strain)
+
+
+a3=c(sigtab_a1a2_edit_sub$strain, sigtab_a1b1_edit_sub$strain, sigtab_a1c1_edit_sub$strain)
+
+not_a1=factor(a3)
+sort(summary(not_a1))
+
+not_a1_sub=c("Otu120","Otu155","Otu171","Otu182","Otu184","Otu19",
+             "Otu217","Otu304","Otu416","Otu46","Otu75","Otu80",
+             "Otu81","Otu93","Otu98","Otu99")
+lala=subset_taxa(cg_filt, strain %in% not_a1_sub)
+tax_table(lala)
+tta=data.frame(tax_table(lala))
+summary(as.factor(tta$species))
+
+```
+
+
+#### get ones specific ot A2 
+```{r}
+
+sigtab_a1a2_edit_sub=subset(sigtab_a1a2_edit, log2FoldChange <= 0)
+sigtab_a2b1_edit_sub=subset(sigtab_a2b1_edit, log2FoldChange >= 0)
+sigtab_a2c1_edit_sub=subset(sigtab_a1c1_edit, log2FoldChange >= 0)
+
+a2_otus=c(sigtab_a1a2_edit_sub$strain, sigtab_a2b1_edit_sub$strain, sigtab_a2c1_edit_sub$strain)
+
+not_a2=factor(a2_otus)
+sort(summary(not_a2))
+
+not_a1_sub=c("Otu85","Otu70","Otu7","Otu67","Otu59","Otu42","Otu26",
+             "Otu197")
+lala=subset_taxa(cg_filt, strain %in% not_a1_sub)
+tax_table(lala)
+
+```
+
+
+#### get ones specific ot B1 
+```{r}
+
+sigtab_a1b1_edit_sub=subset(sigtab_a1b1_edit, log2FoldChange <= 0)
+sigtab_a2b1_edit_sub=subset(sigtab_a2b1_edit, log2FoldChange <= 0)
+sigtab_b1c1_edit_sub=subset(sigtab_b1c1_edit, log2FoldChange >= 0)
+
+a2_otus=c(sigtab_a1b1_edit_sub$strain, sigtab_a2b1_edit_sub$strain, sigtab_b1c1_edit_sub$strain)
+
+not_a2=factor(a2_otus)
+sort(summary(not_a2))
+
+not_a1_sub=c("Otu108","Otu116","Otu132","Otu196","Otu238","Otu509")
+lala=subset_taxa(cg_filt, strain %in% not_a1_sub)
+tax_table(lala)
+
+```
+
+
+
+
+
+
+
+#### get ones specific ot C1
+```{r}
+
+sigtab_a1c1_edit_sub=subset(sigtab_a1c1_edit, log2FoldChange <= 0)
+sigtab_a2c1_edit_sub=subset(sigtab_a2c1_edit, log2FoldChange <= 0)
+sigtab_b1c1_edit_sub=subset(sigtab_b1c1_edit, log2FoldChange <= 0)
+
+a2_otus=c(sigtab_a1a2_edit_sub$strain, sigtab_a2b1_edit_sub$strain, sigtab_a2c1_edit_sub$strain)
+
+not_a2=factor(a2_otus)
+sort(summary(not_a2))
+
+not_a1_sub=c("Otu74")
+lala=subset_taxa(cg_filt, strain %in% not_a1_sub)
+tax_table(lala)
+
+```
+
+# Ancom-bc2
+[tutorial](https://bioconductor.posit.co/packages/3.19/bioc/vignettes/ANCOMBC/inst/doc/ANCOMBC2.html)
+```{r}
+library(ANCOMBC)
+# install.packages("scater")
+
+
+```
+
+
+
