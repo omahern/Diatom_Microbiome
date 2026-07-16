@@ -1810,7 +1810,7 @@ library(ggalluvial)
 library(ggplot2)
 df_melt
 
-cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="A1" | strain_26==
+cg_filter2=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="A1" | strain_26==
                             "A2" | strain_26== "B1" | strain_26 =="C1")
 cg_filter1=subset_samples(cg_filt,strain_26 =="A1" | strain_26==
                             "A2" | strain_26== "B1" | strain_26 =="C1")
@@ -1889,7 +1889,7 @@ library(ggplot2)
 
 
 #A1 
-cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="A1")
+cg_filter1=subset_samples(cg_filt,info=="Bact-A_T0" | strain_26 =="A1")
 physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
 glom=tax_glom(physeq_merged, "species")
 abund=transform_sample_counts(glom, function(x) (x/sum(x)))
@@ -1940,7 +1940,7 @@ a1_figure2
 #ggsave('flowplot_legend.svg', plot=a1_figure2)
 
 #A2
-cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="A2")
+cg_filter1=subset_samples(cg_filt,info=="Bact-A_T0" | strain_26 =="A2")
 physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
 glom=tax_glom(physeq_merged, "species")
 abund=transform_sample_counts(glom, function(x) (x/sum(x)))
@@ -1969,7 +1969,7 @@ a2_figure=ggplot(a2_summed, aes(x = Sample, y = Abundance, alluvium = species, s
 a2_figure
 
 #B1
-cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="B1")
+cg_filter1=subset_samples(cg_filt,info=="Bact-A_T0" | strain_26 =="B1")
 physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
 glom=tax_glom(physeq_merged, "species")
 abund=transform_sample_counts(glom, function(x) (x/sum(x)))
@@ -1998,7 +1998,7 @@ b1_figure
 
 
 # C1
-cg_filter1=subset_samples(cg_filt,innoc=="innoculum" | strain_26 =="C1")
+cg_filter1=subset_samples(cg_filt,info=="Bact-A_T0" | strain_26 =="C1")
 physeq_merged <- merge_samples(cg_filter1, group = "definition_26")
 glom=tax_glom(physeq_merged, "species")
 abund=transform_sample_counts(glom, function(x) (x/sum(x)))
@@ -2036,6 +2036,22 @@ cowww=cowplot::plot_grid(a1_figure, a2_figure, b1_figure,c1_figure,ncol =4)
 
 ```
 
+```{r}
+cg_filter1=subset_samples(cg_filt,innoc=="innoculum") # info=="Bact-A_T0"
+glom=tax_glom(cg_filter1, "species")
+abund=transform_sample_counts(glom, function(x) (x/sum(x)))
+keep_classes <- c("Aestuariibacter", "Aquibacter", "Candidatus Pelagibacter", 
+                  "Cellulophaga",
+                  "Marinobacterium", "Marinomonas","Neptuniibacter", "Other",
+                  "Owenweeksia", "Polaribacter","Pseudohongiella",
+                  "Tenacibaculum", "Vibrio",
+                  "Wandonia")
+sub1=subset_taxa(abund, species %in% keep_classes)
+otu_table(sub1)
+colSums(otu_table(sub1))
+
+```
+                  
 
 # diff abundance with Deseq2
 following this [tutorial](https://r-from-a-learners-perspective.readthedocs.io/en/latest/part5/)
@@ -3021,8 +3037,8 @@ co1
 
 ```
 
-
-#### get ones specific ot A1 
+## OTUs specific to strains
+#### A1 specifc 
 ```{r}
 
 sigtab_a1a2_edit
@@ -3048,10 +3064,197 @@ tax_table(lala)
 tta=data.frame(tax_table(lala))
 summary(as.factor(tta$species))
 
+a1 <- bind_rows(
+  prep(sigtab_a1a2_edit_sub, "a1a2"),
+  prep(sigtab_a1b1_edit_sub, "a1b1"),
+  prep(sigtab_a1c1_edit_sub, "a1c1")
+) %>%
+  add_count(OTU, name = "n_comparisons") %>%   # how many of the 3 tables each OTU is in
+  arrange(OTU)
+
+# keep only OTUs that recur across comparisons
+a1_recurring <- filter(a1, n_comparisons > 2)
+a1_recurring$log2FoldChange=abs(a1_recurring$log2FoldChange)
+a1_summary <- a1_recurring %>%
+  group_by(OTU, family_group) %>%
+  summarise(
+    mean_lfc = mean(log2FoldChange),
+    sd_lfc   = sd(log2FoldChange),
+    n        = n(),
+    se_lfc   = sd_lfc / sqrt(n),
+    min_lfc  = min(log2FoldChange),
+    max_lfc  = max(log2FoldChange),
+    .groups  = "drop"
+  ) %>%
+  arrange(mean_lfc) %>%                 # order rows by effect size
+  mutate(OTU = factor(OTU, levels = OTU))
+p_a1 <- ggplot(a1_summary,
+             aes(x = mean_lfc, y = OTU, fill = family_group)) +
+  geom_vline(xintercept = 0, color = "grey60") +
+  geom_errorbarh(aes(xmin = min_lfc, xmax = max_lfc),   # or mean ± sd_lfc / se_lfc
+                 height = 0.25, color = "grey40") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = keep_order_colors, name = "Order") +
+  labs(x = "log2FoldChange", y = "", title = "Recurring OTUs — A1") +
+  theme_bw(base_size = 12) +
+  theme(legend.position='none',
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )
+p_a1
+
+
+genus_colors <- c(
+  "Aestuariibacter"         = "#88CCEE",
+  "Aquibacter"              = "#44AA99",
+  "Candidatus Pelagibacter" = "#117733",
+  "Cellulophaga"            = "#332288",
+  "Marinobacterium"         = "#DDCC77",
+  "Marinomonas"             = "#999933",
+  "Neptuniibacter"          = "#CC6677",
+  "Owenweeksia"             = "#882255",
+  "Polaribacter"            = "#AA4499",
+  "Pseudohongiella"         = "#DDDDDD",
+  "Tenacibaculum"           = "#6699CC",
+  "Vibrio"                  = "#E69F00",
+  "Wandonia"                = "#F0E442",
+  "Other"                   = "black"
+)
+gen <- c(
+  "Aestuariibacter"  ,
+  "Aquibacter"  ,
+  "Candidatus Pelagibacter",
+  "Cellulophaga" ,
+  "Marinobacterium",
+  "Marinomonas",
+  "Neptuniibacter" ,
+  "Owenweeksia" ,
+  "Polaribacter",
+  "Pseudohongiella" ,
+  "Tenacibaculum",
+  "Vibrio",
+  "Wandonia" ,
+  "Other"  
+)
+
+a1_recurring2 <- a1_recurring %>%
+  mutate(
+    gen_group = if_else(species %in% gen, species, "Other"),
+    gen_group = factor(gen_group, levels = gen, ordered = TRUE)
+  )
+a1_summary <- a1_recurring2 %>%
+  group_by(OTU, gen_group) %>%
+  summarise(
+    mean_lfc = mean(log2FoldChange),
+    sd_lfc   = sd(log2FoldChange),
+    n        = n(),
+    se_lfc   = sd_lfc / sqrt(n),
+    min_lfc  = min(log2FoldChange),
+    max_lfc  = max(log2FoldChange),
+    .groups  = "drop"
+  ) %>%
+  arrange(mean_lfc) %>%                 # order rows by effect size
+  mutate(OTU = factor(OTU, levels = OTU))
+
+p_a1a <- ggplot(a1_summary,
+             aes(x = mean_lfc, y = OTU, fill = gen_group)) +
+  geom_vline(xintercept = 0, color = "grey60") +
+  geom_errorbarh(aes(xmin = min_lfc, xmax = max_lfc),   # or mean ± sd_lfc / se_lfc
+                 height = 0.25, color = "grey40") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = genus_colors, name = "Order") +
+  labs(x = "log2FoldChange", y = "", title = "Recurring OTUs — A1") +
+  theme_bw(base_size = 12) +
+  theme(legend.position='none',
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )
+p_a1a
+
+
+```
+
+##### grouped by genera
+```{r}
+genus_colors <- c(
+  "Aestuariibacter"         = "#88CCEE",
+  "Aquibacter"              = "#44AA99",
+  "Candidatus Pelagibacter" = "#117733",
+  "Cellulophaga"            = "#332288",
+  "Marinobacterium"         = "#DDCC77",
+  "Marinomonas"             = "#999933",
+  "Neptuniibacter"          = "#CC6677",
+  "Owenweeksia"             = "#882255",
+  "Polaribacter"            = "#AA4499",
+  "Pseudohongiella"         = "#DDDDDD",
+  "Tenacibaculum"           = "#6699CC",
+  "Vibrio"                  = "#E69F00",
+  "Wandonia"                = "#F0E442",
+  "Other"                   = "black"
+)
+gen <- c(
+  "Aestuariibacter"  ,
+  "Aquibacter"  ,
+  "Candidatus Pelagibacter",
+  "Cellulophaga" ,
+  "Marinobacterium",
+  "Marinomonas",
+  "Neptuniibacter" ,
+  "Owenweeksia" ,
+  "Polaribacter",
+  "Pseudohongiella" ,
+  "Tenacibaculum",
+  "Vibrio",
+  "Wandonia" ,
+  "Other"  
+)
+
+a1_recurring2 <- a1_recurring %>%
+  mutate(
+    gen_group = if_else(species %in% gen, species, "Other"),
+    gen_group = factor(gen_group, levels = gen, ordered = TRUE)
+  )
+a1_summary <- a1_recurring2 %>%
+  group_by(OTU, species, gen_group) %>%
+  summarise(
+    mean_lfc = mean(log2FoldChange),
+    sd_lfc   = sd(log2FoldChange),
+    n        = n(),
+    se_lfc   = sd_lfc / sqrt(n),
+    min_lfc  = min(log2FoldChange),
+    max_lfc  = max(log2FoldChange),
+    .groups  = "drop"
+  ) %>%
+  arrange(mean_lfc) %>%                 # order rows by effect size
+  mutate(OTU = factor(OTU, levels = OTU))
+
+p_a1a <- ggplot(a1_summary,
+             aes(x = mean_lfc, y = species, fill = gen_group)) +
+  geom_vline(xintercept = 0, color = "grey60") +
+  geom_errorbarh(aes(xmin = min_lfc, xmax = max_lfc),   # or mean ± sd_lfc / se_lfc
+                 height = 0.25, color = "grey40") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = genus_colors, name = "Order") +
+  labs(x = "log2FoldChange", y = "", title = "Recurring OTUs — A1") +
+  theme_bw(base_size = 12) +
+  theme(legend.position='none',
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )
+p_a1a
+
+a1_sig_otus=a1_summary$OTU
+
 ```
 
 
-#### get ones specific ot A2 
+#### A2 specific
 ```{r}
 
 sigtab_a1a2_edit_sub=subset(sigtab_a1a2_edit, log2FoldChange <= 0)
@@ -3068,10 +3271,205 @@ not_a1_sub=c("Otu85","Otu70","Otu7","Otu67","Otu59","Otu42","Otu26",
 lala=subset_taxa(cg_filt, strain %in% not_a1_sub)
 tax_table(lala)
 
+prep <- function(df, comparison) {
+  df %>%
+    rownames_to_column("OTU") %>%
+    mutate(comparison = comparison)
+}
+
+
+a1 <- bind_rows(
+  prep(sigtab_a1a2_edit_sub, "a1a2"),
+  prep(sigtab_a2b1_edit_sub, "a2b1"),
+  prep(sigtab_a2c1_edit_sub, "a2c1")
+) %>%
+  add_count(OTU, name = "n_comparisons") %>%   # how many of the 3 tables each OTU is in
+  arrange(OTU)
+
+# keep only OTUs that recur across comparisons
+a1_recurring <- filter(a1, n_comparisons > 1)
+a1_recurring$log2FoldChange=abs(a1_recurring$log2FoldChange)
+a1_summary <- a1_recurring %>%
+  group_by(OTU, family_group) %>%
+  summarise(
+    mean_lfc = mean(log2FoldChange),
+    sd_lfc   = sd(log2FoldChange),
+    n        = n(),
+    se_lfc   = sd_lfc / sqrt(n),
+    min_lfc  = min(log2FoldChange),
+    max_lfc  = max(log2FoldChange),
+    .groups  = "drop"
+  ) %>%
+  arrange(mean_lfc) %>%                 # order rows by effect size
+  mutate(OTU = factor(OTU, levels = OTU))
+p_a2 <- ggplot(a1_summary,
+             aes(x = mean_lfc, y = OTU, fill = family_group)) +
+  geom_vline(xintercept = 0, color = "grey60") +
+  geom_errorbarh(aes(xmin = min_lfc, xmax = max_lfc),   # or mean ± sd_lfc / se_lfc
+                 height = 0.25, color = "grey40") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = keep_order_colors, name = "Order") +
+  labs(x = "log2FoldChange", y = "", title = "Recurring OTUs — A2") +
+  theme_bw(base_size = 12) +
+  theme(legend.position='none',
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )
+p_a2
+
+
+
+genus_colors <- c(
+  "Aestuariibacter"         = "#88CCEE",
+  "Aquibacter"              = "#44AA99",
+  "Candidatus Pelagibacter" = "#117733",
+  "Cellulophaga"            = "#332288",
+  "Marinobacterium"         = "#DDCC77",
+  "Marinomonas"             = "#999933",
+  "Neptuniibacter"          = "#CC6677",
+  "Owenweeksia"             = "#882255",
+  "Polaribacter"            = "#AA4499",
+  "Pseudohongiella"         = "#DDDDDD",
+  "Tenacibaculum"           = "#6699CC",
+  "Vibrio"                  = "#E69F00",
+  "Wandonia"                = "#F0E442",
+  "Other"                   = "black"
+)
+gen <- c(
+  "Aestuariibacter"  ,
+  "Aquibacter"  ,
+  "Candidatus Pelagibacter",
+  "Cellulophaga" ,
+  "Marinobacterium",
+  "Marinomonas",
+  "Neptuniibacter" ,
+  "Owenweeksia" ,
+  "Polaribacter",
+  "Pseudohongiella" ,
+  "Tenacibaculum",
+  "Vibrio",
+  "Wandonia" ,
+  "Other"  
+)
+
+a1_recurring2 <- a1_recurring %>%
+  mutate(
+    gen_group = if_else(species %in% gen, species, "Other"),
+    gen_group = factor(gen_group, levels = gen, ordered = TRUE)
+  )
+a1_summary <- a1_recurring2 %>%
+  group_by(OTU, gen_group) %>%
+  summarise(
+    mean_lfc = mean(log2FoldChange),
+    sd_lfc   = sd(log2FoldChange),
+    n        = n(),
+    se_lfc   = sd_lfc / sqrt(n),
+    min_lfc  = min(log2FoldChange),
+    max_lfc  = max(log2FoldChange),
+    .groups  = "drop"
+  ) %>%
+  arrange(mean_lfc) %>%                 # order rows by effect size
+  mutate(OTU = factor(OTU, levels = OTU))
+
+p_a2a <- ggplot(a1_summary,
+             aes(x = mean_lfc, y = OTU, fill = gen_group)) +
+  geom_vline(xintercept = 0, color = "grey60") +
+  geom_errorbarh(aes(xmin = min_lfc, xmax = max_lfc),   # or mean ± sd_lfc / se_lfc
+                 height = 0.25, color = "grey40") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = genus_colors, name = "Order") +
+  labs(x = "log2FoldChange", y = "", title = "Recurring OTUs — A2") +
+  theme_bw(base_size = 12) +
+  theme(legend.position='none',
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )
+p_a2a
+
+```
+
+##### grouped by genera
+```{r}
+genus_colors <- c(
+  "Aestuariibacter"         = "#88CCEE",
+  "Aquibacter"              = "#44AA99",
+  "Candidatus Pelagibacter" = "#117733",
+  "Cellulophaga"            = "#332288",
+  "Marinobacterium"         = "#DDCC77",
+  "Marinomonas"             = "#999933",
+  "Neptuniibacter"          = "#CC6677",
+  "Owenweeksia"             = "#882255",
+  "Polaribacter"            = "#AA4499",
+  "Pseudohongiella"         = "#DDDDDD",
+  "Tenacibaculum"           = "#6699CC",
+  "Vibrio"                  = "#E69F00",
+  "Wandonia"                = "#F0E442",
+  "Other"                   = "black"
+)
+gen <- c(
+  "Aestuariibacter"  ,
+  "Aquibacter"  ,
+  "Candidatus Pelagibacter",
+  "Cellulophaga" ,
+  "Marinobacterium",
+  "Marinomonas",
+  "Neptuniibacter" ,
+  "Owenweeksia" ,
+  "Polaribacter",
+  "Pseudohongiella" ,
+  "Tenacibaculum",
+  "Vibrio",
+  "Wandonia" ,
+  "Other"  
+)
+
+a1_recurring2 <- a1_recurring %>%
+  mutate(
+    gen_group = if_else(species %in% gen, species, "Other"),
+    gen_group = factor(gen_group, levels = gen, ordered = TRUE)
+  )
+a1_summary <- a1_recurring2 %>%
+  group_by(OTU, species, gen_group) %>%
+  summarise(
+    mean_lfc = mean(log2FoldChange),
+    sd_lfc   = sd(log2FoldChange),
+    n        = n(),
+    se_lfc   = sd_lfc / sqrt(n),
+    min_lfc  = min(log2FoldChange),
+    max_lfc  = max(log2FoldChange),
+    .groups  = "drop"
+  ) %>%
+  arrange(mean_lfc) %>%                 # order rows by effect size
+  mutate(OTU = factor(OTU, levels = OTU))
+
+p_a2a <- ggplot(a1_summary,
+             aes(x = mean_lfc, y = species, fill = gen_group)) +
+  geom_vline(xintercept = 0, color = "grey60") +
+  geom_errorbarh(aes(xmin = min_lfc, xmax = max_lfc),   # or mean ± sd_lfc / se_lfc
+                 height = 0.25, color = "grey40") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = genus_colors, name = "Order") +
+  labs(x = "log2FoldChange", y = "", title = "Recurring OTUs — A2") +
+  theme_bw(base_size = 12) +
+  theme(legend.position='none',
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )
+p_a2a
+
+a2_sig_otus=a1_summary$OTU
+
 ```
 
 
-#### get ones specific ot B1 
+
+#### B1 specific 
 ```{r}
 
 sigtab_a1b1_edit_sub=subset(sigtab_a1b1_edit, log2FoldChange <= 0)
@@ -3087,15 +3485,174 @@ not_a1_sub=c("Otu108","Otu116","Otu132","Otu196","Otu238","Otu509")
 lala=subset_taxa(cg_filt, strain %in% not_a1_sub)
 tax_table(lala)
 
+
+
+prep <- function(df, comparison) {
+  df %>%
+    rownames_to_column("OTU") %>%
+    mutate(comparison = comparison)
+}
+
+a1 <- bind_rows(
+  prep(sigtab_a1b1_edit_sub, "a1b1"),
+  prep(sigtab_a2b1_edit_sub, "a2b1"),
+  prep(sigtab_b1c1_edit_sub, "b1c1")
+) %>%
+  add_count(OTU, name = "n_comparisons") %>%   # how many of the 3 tables each OTU is in
+  arrange(OTU)
+
+# keep only OTUs that recur across comparisons
+a1_recurring <- filter(a1, n_comparisons > 2)
+a1_recurring$log2FoldChange=abs(a1_recurring$log2FoldChange)
+a1_summary <- a1_recurring %>%
+  group_by(OTU, family_group) %>%
+  summarise(
+    mean_lfc = mean(log2FoldChange),
+    sd_lfc   = sd(log2FoldChange),
+    n        = n(),
+    se_lfc   = sd_lfc / sqrt(n),
+    min_lfc  = min(log2FoldChange),
+    max_lfc  = max(log2FoldChange),
+    .groups  = "drop"
+  ) %>%
+  arrange(mean_lfc) %>%                 # order rows by effect size
+  mutate(OTU = factor(OTU, levels = OTU))
+p_b1 <- ggplot(a1_summary,
+             aes(x = mean_lfc, y = OTU, fill = family_group)) +
+  geom_vline(xintercept = 0, color = "grey60") +
+  geom_errorbarh(aes(xmin = min_lfc, xmax = max_lfc),   # or mean ± sd_lfc / se_lfc
+                 height = 0.25, color = "grey40") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = keep_order_colors, name = "Order") +
+  labs(x = "log2FoldChange", y = "", title = "Recurring OTUs — B1") +
+  theme_bw(base_size = 12) +
+  theme(legend.position='none',
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )
+p_b1
+
+
+a1_recurring2 <- a1_recurring %>%
+  mutate(
+    gen_group = if_else(species %in% gen, species, "Other"),
+    gen_group = factor(gen_group, levels = gen, ordered = TRUE)
+  )
+a1_summary <- a1_recurring2 %>%
+  group_by(OTU, gen_group) %>%
+  summarise(
+    mean_lfc = mean(log2FoldChange),
+    sd_lfc   = sd(log2FoldChange),
+    n        = n(),
+    se_lfc   = sd_lfc / sqrt(n),
+    min_lfc  = min(log2FoldChange),
+    max_lfc  = max(log2FoldChange),
+    .groups  = "drop"
+  ) %>%
+  arrange(mean_lfc) %>%                 # order rows by effect size
+  mutate(OTU = factor(OTU, levels = OTU))
+
+p_b1b <- ggplot(a1_summary,
+             aes(x = mean_lfc, y = OTU, fill = gen_group)) +
+  geom_vline(xintercept = 0, color = "grey60") +
+  geom_errorbarh(aes(xmin = min_lfc, xmax = max_lfc),   # or mean ± sd_lfc / se_lfc
+                 height = 0.25, color = "grey40") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = genus_colors, name = "Order") +
+  labs(x = "log2FoldChange", y = "", title = "Recurring OTUs — B1") +
+  theme_bw(base_size = 12) +
+  theme(legend.position='none',
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )
+p_b1b
+```
+
+
+
+##### grouped by genera
+```{r}
+genus_colors <- c(
+  "Aestuariibacter"         = "#88CCEE",
+  "Aquibacter"              = "#44AA99",
+  "Candidatus Pelagibacter" = "#117733",
+  "Cellulophaga"            = "#332288",
+  "Marinobacterium"         = "#DDCC77",
+  "Marinomonas"             = "#999933",
+  "Neptuniibacter"          = "#CC6677",
+  "Owenweeksia"             = "#882255",
+  "Polaribacter"            = "#AA4499",
+  "Pseudohongiella"         = "#DDDDDD",
+  "Tenacibaculum"           = "#6699CC",
+  "Vibrio"                  = "#E69F00",
+  "Wandonia"                = "#F0E442",
+  "Other"                   = "black"
+)
+gen <- c(
+  "Aestuariibacter"  ,
+  "Aquibacter"  ,
+  "Candidatus Pelagibacter",
+  "Cellulophaga" ,
+  "Marinobacterium",
+  "Marinomonas",
+  "Neptuniibacter" ,
+  "Owenweeksia" ,
+  "Polaribacter",
+  "Pseudohongiella" ,
+  "Tenacibaculum",
+  "Vibrio",
+  "Wandonia" ,
+  "Other"  
+)
+
+a1_recurring2 <- a1_recurring %>%
+  mutate(
+    gen_group = if_else(species %in% gen, species, "Other"),
+    gen_group = factor(gen_group, levels = gen, ordered = TRUE)
+  )
+a1_summary <- a1_recurring2 %>%
+  group_by(OTU, species, gen_group) %>%
+  summarise(
+    mean_lfc = mean(log2FoldChange),
+    sd_lfc   = sd(log2FoldChange),
+    n        = n(),
+    se_lfc   = sd_lfc / sqrt(n),
+    min_lfc  = min(log2FoldChange),
+    max_lfc  = max(log2FoldChange),
+    .groups  = "drop"
+  ) %>%
+  arrange(mean_lfc) %>%                 # order rows by effect size
+  mutate(OTU = factor(OTU, levels = OTU))
+
+p_b1a <- ggplot(a1_summary,
+             aes(x = mean_lfc, y = species, fill = gen_group)) +
+  geom_vline(xintercept = 0, color = "grey60") +
+  geom_errorbarh(aes(xmin = min_lfc, xmax = max_lfc),   # or mean ± sd_lfc / se_lfc
+                 height = 0.25, color = "grey40") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = genus_colors, name = "Order") +
+  labs(x = "log2FoldChange", y = "", title = "Recurring OTUs — B1") +
+  theme_bw(base_size = 12) +
+  theme(legend.position='none',
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )
+p_b1a
+
+b1_sig_otus=a1_summary$OTU
+
 ```
 
 
 
 
-
-
-
-#### get ones specific ot C1
+#### C1 specific 
 ```{r}
 
 sigtab_a1c1_edit_sub=subset(sigtab_a1c1_edit, log2FoldChange <= 0)
@@ -3111,16 +3668,282 @@ not_a1_sub=c("Otu74")
 lala=subset_taxa(cg_filt, strain %in% not_a1_sub)
 tax_table(lala)
 
+
+prep <- function(df, comparison) {
+  df %>%
+    rownames_to_column("OTU") %>%
+    mutate(comparison = comparison)
+}
+
+a1 <- bind_rows(
+  prep(sigtab_a1c1_edit_sub, "a1c1"),
+  prep(sigtab_a2c1_edit_sub, "a2c1"),
+  prep(sigtab_b1c1_edit_sub, "b1c1")
+) %>%
+  add_count(OTU, name = "n_comparisons") %>%   # how many of the 3 tables each OTU is in
+  arrange(OTU)
+
+# keep only OTUs that recur across comparisons
+a1_recurring <- filter(a1, n_comparisons > 2)
+a1_recurring$log2FoldChange=abs(a1_recurring$log2FoldChange)
+
+library(dplyr)
+
+# summarise across the comparisons each OTU appears in
+a1_summary <- a1_recurring %>%
+  group_by(OTU, family_group) %>%
+  summarise(
+    mean_lfc = mean(log2FoldChange),
+    sd_lfc   = sd(log2FoldChange),
+    n        = n(),
+    se_lfc   = sd_lfc / sqrt(n),
+    min_lfc  = min(log2FoldChange),
+    max_lfc  = max(log2FoldChange),
+    .groups  = "drop"
+  )
+p_c1 <- ggplot(a1_summary,
+             aes(x = mean_lfc, y = family_group, fill = family_group)) +
+  geom_vline(xintercept = 0, color = "grey60") +
+  geom_errorbarh(aes(xmin = min_lfc, xmax = max_lfc),   # or mean±sd_lfc
+                 height = 0.25, color = "grey40") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = keep_order_colors, name = "Order") +
+  scale_y_discrete(limits = rev(keep_order_sort), drop = FALSE) +
+  labs(x = "log2FoldChange", y = "", title = "Recurring OTUs — A1") +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold"),
+    legend.position = "none"
+  )
+
+p_c1
+
+
+
+a1_summary <- a1_recurring %>%
+  group_by(OTU, family_group) %>%
+  summarise(
+    mean_lfc = mean(log2FoldChange),
+    sd_lfc   = sd(log2FoldChange),
+    n        = n(),
+    se_lfc   = sd_lfc / sqrt(n),
+    min_lfc  = min(log2FoldChange),
+    max_lfc  = max(log2FoldChange),
+    .groups  = "drop"
+  ) %>%
+  arrange(mean_lfc) %>%                 # order rows by effect size
+  mutate(OTU = factor(OTU, levels = OTU))
+p_c1 <- ggplot(a1_summary,
+             aes(x = mean_lfc, y = OTU, fill = family_group)) +
+  geom_vline(xintercept = 0, color = "grey60") +
+  geom_errorbarh(aes(xmin = min_lfc, xmax = max_lfc),   # or mean ± sd_lfc / se_lfc
+                 height = 0.25, color = "grey40") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = keep_order_colors, name = "Order") +
+  labs(x = "log2FoldChange", y = "", title = "Recurring OTUs — C1") +
+  theme_bw(base_size = 12) +
+  theme(legend.position='none',
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )
+p_c1
+
+
+
+a1_recurring2 <- a1_recurring %>%
+  mutate(
+    gen_group = if_else(species %in% gen, species, "Other"),
+    gen_group = factor(gen_group, levels = gen, ordered = TRUE)
+  )
+a1_summary <- a1_recurring2 %>%
+  group_by(OTU, gen_group) %>%
+  summarise(
+    mean_lfc = mean(log2FoldChange),
+    sd_lfc   = sd(log2FoldChange),
+    n        = n(),
+    se_lfc   = sd_lfc / sqrt(n),
+    min_lfc  = min(log2FoldChange),
+    max_lfc  = max(log2FoldChange),
+    .groups  = "drop"
+  ) %>%
+  arrange(mean_lfc) %>%                 # order rows by effect size
+  mutate(OTU = factor(OTU, levels = OTU))
+
+p_c1b <- ggplot(a1_summary,
+             aes(x = mean_lfc, y = OTU, fill = gen_group)) +
+  geom_vline(xintercept = 0, color = "grey60") +
+  geom_errorbarh(aes(xmin = min_lfc, xmax = max_lfc),   # or mean ± sd_lfc / se_lfc
+                 height = 0.25, color = "grey40") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = genus_colors, name = "Order") +
+  labs(x = "log2FoldChange", y = "", title = "Recurring OTUs — C1") +
+  theme_bw(base_size = 12) +
+  theme(legend.position='none',
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )
+p_c1b
 ```
 
-# Ancom-bc2
-[tutorial](https://bioconductor.posit.co/packages/3.19/bioc/vignettes/ANCOMBC/inst/doc/ANCOMBC2.html)
+
+##### grouped by genera
 ```{r}
-library(ANCOMBC)
-# install.packages("scater")
+genus_colors <- c(
+  "Aestuariibacter"         = "#88CCEE",
+  "Aquibacter"              = "#44AA99",
+  "Candidatus Pelagibacter" = "#117733",
+  "Cellulophaga"            = "#332288",
+  "Marinobacterium"         = "#DDCC77",
+  "Marinomonas"             = "#999933",
+  "Neptuniibacter"          = "#CC6677",
+  "Owenweeksia"             = "#882255",
+  "Polaribacter"            = "#AA4499",
+  "Pseudohongiella"         = "#DDDDDD",
+  "Tenacibaculum"           = "#6699CC",
+  "Vibrio"                  = "#E69F00",
+  "Wandonia"                = "#F0E442",
+  "Other"                   = "black"
+)
+gen <- c(
+  "Aestuariibacter"  ,
+  "Aquibacter"  ,
+  "Candidatus Pelagibacter",
+  "Cellulophaga" ,
+  "Marinobacterium",
+  "Marinomonas",
+  "Neptuniibacter" ,
+  "Owenweeksia" ,
+  "Polaribacter",
+  "Pseudohongiella" ,
+  "Tenacibaculum",
+  "Vibrio",
+  "Wandonia" ,
+  "Other"  
+)
 
+a1_recurring2 <- a1_recurring %>%
+  mutate(
+    gen_group = if_else(species %in% gen, species, "Other"),
+    gen_group = factor(gen_group, levels = gen, ordered = TRUE)
+  )
+a1_summary <- a1_recurring2 %>%
+  group_by(OTU, species, gen_group) %>%
+  summarise(
+    mean_lfc = mean(log2FoldChange),
+    sd_lfc   = sd(log2FoldChange),
+    n        = n(),
+    se_lfc   = sd_lfc / sqrt(n),
+    min_lfc  = min(log2FoldChange),
+    max_lfc  = max(log2FoldChange),
+    .groups  = "drop"
+  ) %>%
+  arrange(mean_lfc) %>%                 # order rows by effect size
+  mutate(OTU = factor(OTU, levels = OTU))
+
+p_c1a <- ggplot(a1_summary,
+             aes(x = mean_lfc, y = species, fill = gen_group)) +
+  geom_vline(xintercept = 0, color = "grey60") +
+  geom_errorbarh(aes(xmin = min_lfc, xmax = max_lfc),   # or mean ± sd_lfc / se_lfc
+                 height = 0.25, color = "grey40") +
+  geom_point(size = 5, alpha = 0.9, pch = 21) +
+  scale_fill_manual(values = genus_colors, name = "Order") +
+  labs(x = "log2FoldChange", y = "", title = "Recurring OTUs — C1") +
+  theme_bw(base_size = 12) +
+  theme(legend.position='none',
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor   = element_blank(),
+    axis.text.y  = element_text(size = 10),
+    axis.title   = element_text(face = "bold")
+  )
+p_c1a
+
+c1_sig_otus=a1_summary$OTU
 
 ```
 
 
 
+### get ones across groups 
+
+```{r}
+cowplot::plot_grid(p_a1,p_a2,p_b1,p_c1, align='hv',nrow=1)
+#cowplot::plot_grid(p_a1a,p_a2a,p_b1b,p_c1b, align='hv',nrow=1)
+
+cowplot::plot_grid(p_a1a,p_a2a,p_b1a,p_c1a, align='hv',nrow=2)
+
+
+cow2=cowplot::plot_grid(p_a1a,p_a2a,p_b1a,p_c1a, align='hv',nrow=1, labels='auto')
+
+
+ggsave('logfoldchange_genus.svg', plot=cow2, dpi=300, width=20, height=4)
+
+```
+
+
+## diff abund OTUs in community 
+
+```{r}
+# get the significant otus
+deseq_otus=c(sigtab_a1a2_edit$strain, 
+       sigtab_a1b1_edit$strain, 
+       sigtab_a1c1_edit$strain,
+       sigtab_a2b1_edit$strain,
+       sigtab_a2c1_edit$strain,
+       sigtab_b1c1_edit$strain)
+# subset the data frame from the genus plot 
+cg_filter1=subset_samples(cg_filt,strain_26 =="A1" | strain_26==
+                            "A2" | strain_26== "B1" | strain_26=="C1")
+abund=transform_sample_counts(cg_filter1, function(x) (x/sum(x)))
+sub_all=subset_taxa(abund, strain %in% deseq_otus)
+
+s1=subset_samples(sub_all, definition=='assemblage')
+mean(otu_table(s1))
+sd(otu_table(s1))
+range(otu_table(s1))
+ps_filtered=ps_prune(s1, min.samples = 0, min.reads = 0, min.abundance = 0.01)
+
+
+keep_taxa <- taxa_sums(abund) / nsamples(abund) > 0.01
+ps_filtered <- prune_taxa(keep_taxa, abund)
+ps_filtered=ps_prune(abund, min.samples = 0, min.reads = 0, min.abundance = 0.01)
+tax_table(ps_filtered)
+
+
+
+
+```
+
+
+```{r}
+
+sig_diff_otus=c(a1_sig_otus, a2_sig_otus, b1_sig_otus, c1_sig_otus)
+
+
+cg_filter1=subset_samples(cg_filt,strain_26 =="A1" | strain_26==
+                            "A2" | strain_26== "B1" | strain_26=="C1")
+abund=transform_sample_counts(cg_filter1, function(x) (x/sum(x)))
+sub_all=subset_taxa(abund, strain %in% sig_diff_otus)
+sub_all_glom=tax_glom(sub_all, taxrank="species")
+tax_table(sub_all_glom)
+
+s1=subset_samples(sub_all, definition=='assemblage')
+mean(otu_table(s1))
+sd(otu_table(s1))
+range(otu_table(s1))
+
+ps_filtered=ps_prune(s1, min.samples = 0, min.reads = 0, min.abundance = 0.01)
+
+
+keep_taxa <- taxa_sums(abund) / nsamples(abund) > 0.01
+ps_filtered <- prune_taxa(keep_taxa, abund)
+ps_filtered=ps_prune(abund, min.samples = 0, min.reads = 0, min.abundance = 0.01)
+tax_table(ps_filtered)
+
+```
