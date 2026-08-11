@@ -442,6 +442,60 @@ bact12/mean2
 
 ```
 
+
+## diatom curves with growth and stuff
+
+###### diatom curves with ggplot
+```{r}
+read=read.csv(file='datafiles/rotula_cellcounts.csv',header=T)
+# dim(read)
+
+growth_data=data.frame(read[,6:10])
+
+# get mean and standard deviation
+mean=aggregate(growth_data,by=list(read$treatment),FUN=mean,na.rm=T)
+sd=aggregate(growth_data,by=list(read$treatment),FUN=sd,na.rm=T)
+
+sd_p=pivot_longer(sd, cols = X0:X5)
+colnames(sd_p)=c("Diatom", "Time", "SD")
+
+mean_p=pivot_longer(mean, cols = X0:X5)
+colnames(mean_p)=c("Diatom", "Time", "Mean")
+mean_p$day=parse_number(mean_p$Time)
+
+diatom_conc=merge(mean_p, sd_p)
+diatom_conc$bacteria=c(rep("xenic",5),rep("axenic",5),
+                       rep("xenic",5),rep("axenic",5),
+                       rep("xenic",5),rep("axenic",5),
+                       rep("xenic",5),rep("axenic",5))
+diatom_conc$strain=c(rep("A1", 10), rep("A2",10), rep("B1",10), rep("C1",10))
+
+fill_bact=c('xenic'='gray','axenic'='white')
+strain_colors=c("A1"="#7768AE",
+                "A2"="#4D9DE0", 
+                "B1"="#E15554",
+                "C1"= "#3BB273" )
+
+
+diatom_plot=ggplot(diatom_conc, aes(x = day, y = Mean, fill=bacteria, color=strain)) +
+  geom_line(size=1) +                  # Draws the line
+  geom_point( size = 3, pch=21, linewidth=1.3) +                 # Adds data points
+  geom_errorbar(aes(ymin = Mean - SD, 
+                    ymax = Mean + SD), 
+                width = 0.1, color = "black") +
+  facet_grid(~strain) +
+  scale_fill_manual(values=fill_bact) +
+  scale_color_manual(values=strain_colors) +
+  theme_classic2(base_size=12) +
+  scale_y_log10() +
+  xlab("Time (days)") +
+  ylab("Diatom concentration (cells/mL)") +
+ theme(legend.position='none')
+diatom_plot
+
+```
+
+
 #### bacterial curves
 ```{r}
 read=read.csv(file="datafiles/bact_growth2.csv",header=T)
@@ -757,6 +811,199 @@ clams
 ```
 
 
+#### Fig 1 with curves 
+
+```{r}
+read=read.csv(file='datafiles/rotula_cellcounts.csv',header=T)
+# dim(read)
+
+growth_data=data.frame(read[,6:10])
+
+# get mean and standard deviation
+mean=aggregate(growth_data,by=list(read$treatment),FUN=mean,na.rm=T)
+sd=aggregate(growth_data,by=list(read$treatment),FUN=sd,na.rm=T)
+
+sd_p=pivot_longer(sd, cols = X0:X5)
+colnames(sd_p)=c("Diatom", "Time", "SD")
+
+mean_p=pivot_longer(mean, cols = X0:X5)
+colnames(mean_p)=c("Diatom", "Time", "Mean")
+mean_p$day=parse_number(mean_p$Time)
+
+diatom_conc=merge(mean_p, sd_p)
+diatom_conc$bacteria=c(rep("xenic",5),rep("axenic",5),
+                       rep("xenic",5),rep("axenic",5),
+                       rep("xenic",5),rep("axenic",5),
+                       rep("xenic",5),rep("axenic",5))
+diatom_conc$strain=c(rep("A1", 10), rep("A2",10), rep("B1",10), rep("C1",10))
+
+fill_bact=c('xenic'='gray','axenic'='white')
+strain_colors=c("A1"="#7768AE",
+                "A2"="#4D9DE0", 
+                "B1"="#E15554",
+                "C1"= "#3BB273" )
+
+
+diatom_plot=ggplot(diatom_conc, aes(x = day, y = Mean, fill=bacteria, color=strain)) +
+  geom_line(size=1) +                  # Draws the line
+  geom_point( size = 3, pch=21, linewidth=1.3) +                 # Adds data points
+  geom_errorbar(aes(ymin = Mean - SD, 
+                    ymax = Mean + SD), 
+                width = 0.1, color = "black") +
+  facet_grid(~strain) +
+  scale_fill_manual(values=fill_bact) +
+  scale_color_manual(values=strain_colors) +
+  theme_classic2(base_size=12) +
+  scale_y_log10() +
+  xlab("Time (days)") +
+  ylab("Diatom concentration (cells/mL)") +
+ theme(legend.position='none')
+diatom_plot
+
+```
+
+```{r fv-growth-again, dpi=300, width=5,height=6,message=FALSE, error=FALSE, warning=FALSE}
+
+read<-read.csv(file="datafiles/TR_Growth_rates_Feb16.csv",
+               header=T,row.names=1)
+# values_colb=c("#631879", "#3B4992", "#EE0000", "#008B45",
+symnum.args <- list(cutpoints = c(0, 0.0001, 0.001, 0.01, 0.05, Inf), symbols = c("****", "***", "**", "*", " "))
+ subset=read
+
+mean=aggregate(subset$growth_rate,by=list(subset$treatment),FUN=mean,na.rm=T)
+sd=aggregate(growth_data,by=list(read$treatment),FUN=sd,na.rm=T)
+
+sd_p=pivot_longer(sd, cols = X0:X5)
+colnames(sd_p)=c("Diatom", "Time", "SD")
+
+mean_p=pivot_longer(mean, cols = X0:X5)
+colnames(mean_p)=c("Diatom", "Time", "Mean")
+mean_p$day=parse_number(mean_p$Time)
+ 
+ ggplot1=ggplot(subset, aes(x=strain_26, y=growth_rate, 
+                   fill=culture, 
+                   color=strain_26)) +
+  geom_point( size = 3, pch=21, linewidth=1.3) +                 # Adds data points
+  geom_errorbar(aes(ymin = Mean - SD, 
+                    ymax = Mean + SD), 
+                width = 0.1, color = "black") +
+  theme_classic(base_size = 14) + 
+  scale_fill_manual(values=c('white','gray'))+
+
+    scale_color_manual(values=c('#631879','#3B4992', '#EE0000',"#008B45")) +
+  theme(plot.margin=unit(c(0,0,0,0.25),"cm"))+
+# theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+   theme(legend.position="none",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1)) + theme(text = element_text(size = 14)) +
+
+  ylab(expression("Growth rate " * mu *  ~day^-1)) +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  scale_x_discrete(name='') +coord_flip() +
+  stat_compare_means(aes(x=strain_26, y=growth_rate,
+                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE, size=10)
+ggplot1
+
+
+
+read<-read.csv(file="datafiles/TR_Growth_rates_Feb16.csv",
+               header=T,row.names=1)
+dim(read)
+head(read)
+read2=subset(read, strain!="NB4" & strain !="NB6" & strain !="RA4" & strain !="YC5")
+
+
+
+gplot2=ggplot(read, 
+             aes(x=strain_26, y=fv,
+                 color=factor(strain_26), fill=factor(culture)))+
+  geom_boxplot(alpha=.7) +
+  theme_classic(base_size=14) + 
+  scale_fill_manual(values=c('white','gray'))+
+ # scale_color_manual(values=c('#003f5c','#7a5195', '#ef5675',"#ffa600")) +
+    scale_color_manual(values=c('#631879','#3B4992', '#EE0000',"#008B45")) +
+    theme(legend.position="none",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+ # scale_y_continuous(name='Growth Rate')+
+  ylab("Fv/Fm") +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  scale_x_discrete(name='')+ coord_flip() +
+  stat_compare_means(aes(x=strain_26, y=fv,
+                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE, size=10)
+    
+
+gplot2
+    
+
+
+gplot22=ggplot(read, 
+             aes(x=strain_26, y=fv,
+                 color=factor(strain_26), fill=factor(culture)))+
+  geom_boxplot(alpha=.7) +
+  theme_classic(base_size=14) + 
+  scale_fill_manual(values=c('white','gray'))+
+ # scale_color_manual(values=c('#003f5c','#7a5195', '#ef5675',"#ffa600")) +
+    scale_color_manual(values=c('#631879','#3B4992', '#EE0000',"#008B45")) +
+    theme(legend.position="bottom",axis.text.x = element_text(angle = 0, vjust = 1, hjust=1, size=10)) + 
+ # scale_y_continuous(name='Growth Rate')+
+  ylab("Fv/Fm") +
+  guides(color = guide_legend(nrow = 2),fill = guide_legend(nrow = 2))+
+  scale_x_discrete(name='')+ coord_flip() +
+  stat_compare_means(aes(x=strain_26, y=fv,
+                 color=factor(culture)),paired=T,  label = "p.signif", method='anova', hide.ns=TRUE)
+  
+gplot22
+
+#ggsave("culture_legend.svg", plot = gplot22, width = 8, height = 5)
+
+gplot3=ggplot(data1, aes(RED,y=naems2, color=factor(strain_2), fill=factor(Bact))) + 
+  geom_violin(alpha=0.7, trim=TRUE,draw_quantiles = c(0.5)) +
+  theme_classic(base_size=14)+
+  ylab("") +
+  scale_fill_manual(values=c('white','gray'))+
+ # scale_color_manual(values=c('#003f5c','#7a5195', '#ef5675',"#ffa600")) +
+    scale_color_manual(values=c('#631879','#3B4992', '#EE0000',"#008B45")) +
+  scale_x_continuous(name='692/40 mm', limits=quantile(data1$RED, c(0.01, 0.9999)))  + theme(legend.position = 'none')
+gplot3
+
+
+data2=data1
+trimmed_data <- data2 %>%
+  group_by(names) %>%
+  filter(
+    RED >= quantile(RED, 0.025) &
+    RED <= quantile(RED, 0.975)
+  ) %>%
+  ungroup()
+
+
+
+gplot3=ggplot(trimmed_data, aes(RED,y=naems2, color=factor(strain_2), fill=factor(Bact))) + 
+  geom_violin(alpha=0.7, trim=TRUE, draw_quantiles = c(0.5)) +
+  theme_classic(base_size=14)+
+  ylab("") +
+  xlab("692/40 mm") + 
+  scale_fill_manual(values=c('white','gray'))+
+ # scale_color_manual(values=c('#003f5c','#7a5195', '#ef5675',"#ffa600")) +
+    scale_color_manual(values=c('#631879','#3B4992', '#EE0000',"#008B45")) +
+   theme(legend.position = 'none') 
+#   stat_compare_means(aes(x=RED, y=naems2,
+ #                paired=T,  label = "p.signif", method='ks.test', hide.ns=TRUE, size=10))
+gplot3
+
+
+
+clams=cowplot::plot_grid(ggplot1, gplot2, gplot3,
+                   rel_heights = c(1,1),
+                   nrow=1,
+                   align='h',
+                   axis='l',
+                   byrow=TRUE, labels='auto')
+
+clams
+#ggsave("filename.svg", plot = clams, width = 8, height = 4)
+
+```
+
+
+
 ##### stats
 ```{r}
 read=read.csv(file='datafiles/fcm_rotula.csv',header=T)
@@ -993,7 +1240,7 @@ figure1=ggplot(spec_bar,aes(x=name, y=mean1)) +
 
 ```
 
-# Figure 2 barplot
+## barplot
 ```{r}
 cg_filter=subset_samples(cg_filt,diatom_control=="diatom")
 glom=tax_glom(cg_filter, "species")
